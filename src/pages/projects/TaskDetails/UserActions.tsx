@@ -84,7 +84,7 @@ export const UserActions = ({ phaseId, taskData, projectId }: TUserActionsProps)
             </button>
           </Tooltip>
         )}
-        <Tooltip title="View members of this task" arrow placement="left">
+        {/* <Tooltip title="View members of this task" arrow placement="left">
           <button
             onClick={handleOpenAddMemberBoard}
             className="flex items-center gap-x-2 font-medium text-sm py-[6px] px-3 bg-modal-btn-bgcl rounded hover:bg-modal-btn-hover-bgcl"
@@ -92,7 +92,7 @@ export const UserActions = ({ phaseId, taskData, projectId }: TUserActionsProps)
             <GroupsIcon fontSize="small" />
             <span>Members</span>
           </button>
-        </Tooltip>
+        </Tooltip> */}
         {/* {checkUserPermission(userInProject.projectRole, "assign-due-date") && (
           <Tooltip title="Set deadline for this task" arrow placement="left">
             <button

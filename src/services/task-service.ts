@@ -2,7 +2,7 @@ import {
   convertToApiTaskStatus,
   convertToTaskStatus,
   convertUndefinedFieldsToNull,
-  convertProjectRoles,
+  convertToProjectRoles,
 } from "../utils/api-converters/api-converters"
 import type {
   TTaskFileData,
@@ -53,7 +53,7 @@ class TaskService {
           createdAt: comment.createdAt,
           user: {
             ...convertUserApiData(userData),
-            projectRole: convertProjectRoles(comment.userRole),
+            projectRole: convertToProjectRoles(comment.userRole),
           },
           isTaskResult: false,
         }

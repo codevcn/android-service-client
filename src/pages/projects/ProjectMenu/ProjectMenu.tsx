@@ -88,10 +88,13 @@ const LeaveDeleteProject = () => {
       projectService
         .deleteProject(projectData.id)
         .then(() => {
-          pureNavigator("/workspace", true)
+          pureNavigator("/workspace", false)
         })
         .catch((error) => {
           toast.error(axiosErrorHandler.handleHttpError(error).message)
+        })
+        .finally(() => {
+          openFixedLoadingHandler(false)
         })
     } else {
       projectService
@@ -101,6 +104,9 @@ const LeaveDeleteProject = () => {
         })
         .catch((error) => {
           toast.error(axiosErrorHandler.handleHttpError(error).message)
+        })
+        .finally(() => {
+          openFixedLoadingHandler(false)
         })
     }
   }

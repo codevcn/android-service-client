@@ -1,8 +1,18 @@
 // đã sửa xong file này
 
 import { TSuccess } from "../utils/types"
-import { apiGetNotifications, apiMarkNotificationAsRead } from "./apis/notification-apis"
-import type { TFetchNotificationsData, TNotificationData } from "./types"
+import {
+  apiCountUnreadNotifications,
+  apiGetNotifications,
+  apiMarkAllAsRead,
+  apiMarkNotificationAsRead,
+  apiTestNotify,
+} from "./apis/notification-apis"
+import type {
+  TFetchNotificationsData,
+  TNotificationData,
+  TCountUnreadNotificationsData,
+} from "./types"
 
 type TUpdateNotificationPayload = { id: TNotificationData["id"] } & Partial<
   Omit<TNotificationData, "id">
@@ -34,11 +44,10 @@ class NotificationService {
     return { success: true }
   }
 
-  // đã bỏ
-  // async markAllAsRead(): Promise<TSuccess> {
-  //   await perfomDelay(1000)
-  //   return { success: true }
-  // }
+  async markAllAsRead(): Promise<TSuccess> {
+    await apiMarkAllAsRead()
+    return { success: true }
+  }
 
   // đã bỏ
   // async loadMoreNotifications(lastId: number): Promise<TFetchNotificationsData> {
@@ -57,11 +66,14 @@ class NotificationService {
   //   }
   // }
 
-  // đã bỏ
-  // async countUnreadNotifcations(): Promise<TCountUnreadNotificationsData> {
-  //   await perfomDelay(1000)
-  //   return { total: 11 }
-  // }
+  async countUnreadNotifcations(): Promise<TCountUnreadNotificationsData> {
+    const { data } = await apiCountUnreadNotifications()
+    return { count: data.data.count }
+  }
+
+  async testNotify(): Promise<void> {
+    await apiTestNotify()
+  }
 }
 
 export const notificationService = new NotificationService()

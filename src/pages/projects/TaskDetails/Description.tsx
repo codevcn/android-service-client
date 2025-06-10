@@ -89,6 +89,7 @@ export const Description = ({ description, taskId, phaseId }: TDescriptionProps)
             wrapperClassName="css-rich-text-editor-wrapper"
             taskId={taskId}
             userId={user.id}
+            placeholder="Add a description for this task..."
           />
           <div className="flex gap-x-3 mt-2">
             <button

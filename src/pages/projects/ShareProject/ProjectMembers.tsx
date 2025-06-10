@@ -24,6 +24,108 @@ import { taskService } from "../../../services/task-service"
 type TRolesProps = {
   selectedMember: TProjectMemberData
   userInProject: TProjectMemberData
+  onClose: () => void
+}
+
+const Roles = ({ selectedMember, userInProject, onClose }: TRolesProps) => {
+  const userProjectRole = userInProject.projectRole
+  const selectedMemberId = selectedMember.id
+  const selectedMemberRole = selectedMember.projectRole
+  const inactiveClass: string = "opacity-60 pointer-events-none"
+  const hasPermission = checkUserPermission(userProjectRole, "assign-project-role")
+  const project = useAppSelector((state) => state.project.project!)
+  const dispatch = useAppDispatch()
+
+  const leaveProject = () => {
+    openFixedLoadingHandler(true)
+    projectService
+      .leaveProject(project.id)
+      .then(() => {
+        pureNavigator("", true)
+      })
+      .catch((error) => {
+        toast.error(axiosErrorHandler.handleHttpError(error).message)
+      })
+      .finally(() => {
+        openFixedLoadingHandler(false)
+      })
+  }
+
+  const assignUserProjectRole = (role: EProjectRoles, memberId: number) => {
+    if (selectedMember.projectRole !== role) {
+      openFixedLoadingHandler(true)
+      projectService
+        .changeRole(project.id, memberId, role)
+        .then(() => {
+          dispatch(updateMemberInProject({ projectRole: role, id: memberId }))
+        })
+        .catch((error) => {
+          toast.error(axiosErrorHandler.handleHttpError(error).message)
+        })
+        .finally(() => {
+          openFixedLoadingHandler(false)
+          onClose()
+        })
+    }
+  }
+
+  const removeFromProject = (memberId: number) => {
+    openFixedLoadingHandler(true)
+    projectService
+      .removeMemberFromProject(project.id, memberId)
+      .then(() => {
+        dispatch(removeMemberFromProject(memberId))
+        onClose()
+      })
+      .catch((error) => {
+        toast.error(axiosErrorHandler.handleHttpError(error).message)
+      })
+      .finally(() => {
+        openFixedLoadingHandler(false)
+      })
+  }
+
+  return (
+    <ul className="mt-1 text-modal-text-cl">
+      {selectedMemberId && selectedMemberRole !== EProjectRoles.ADMIN && (
+        <>
+          <li
+            onClick={() => assignUserProjectRole(EProjectRoles.LEADER, selectedMemberId)}
+            className={`${hasPermission ? "" : inactiveClass} cursor-pointer hover:bg-hover-silver-bgcl py-2 px-3 text-sm font-medium`}
+          >
+            <p>Leader</p>
+          </li>
+          <li
+            onClick={() => assignUserProjectRole(EProjectRoles.MEMBER, selectedMemberId)}
+            className={`${hasPermission ? "" : inactiveClass} cursor-pointer hover:bg-hover-silver-bgcl py-2 px-3 text-sm font-medium`}
+          >
+            <p>Member</p>
+          </li>
+        </>
+      )}
+      {selectedMemberId === userInProject.id ? (
+        <li
+          onClick={leaveProject}
+          className={`cursor-pointer hover:bg-hover-silver-bgcl py-2 px-3 text-sm font-medium`}
+        >
+          <div className="flex items-center justify-between gap-x-3">
+            <span>Leave project</span>
+            <LogoutIcon fontSize="small" />
+          </div>
+        </li>
+      ) : (
+        <li
+          onClick={() => removeFromProject(selectedMemberId)}
+          className={`${checkUserPermission(userProjectRole, "add-remove-project-member") ? "" : inactiveClass} cursor-pointer hover:bg-hover-silver-bgcl py-2 px-3 text-sm font-medium`}
+        >
+          <div className="flex items-center justify-between gap-x-3">
+            <span>Remove from project</span>
+            <LogoutIcon fontSize="small" />
+          </div>
+        </li>
+      )}
+    </ul>
+  )
 }
 
 type TEditAuthorizationProps = {
@@ -39,90 +141,6 @@ const EditAuthorization = ({
   userInProject,
   onClose,
 }: TEditAuthorizationProps) => {
-  const project = useAppSelector((state) => state.project.project!)
-
-  const leaveProject = () => {
-    openFixedLoadingHandler(true)
-    projectService
-      .leaveProject(project.id)
-      .then(() => {
-        pureNavigator("", true)
-      })
-      .catch((error) => {
-        toast.error(axiosErrorHandler.handleHttpError(error).message)
-      })
-  }
-
-  const Roles = ({ selectedMember, userInProject }: TRolesProps) => {
-    const userProjectRole = userInProject.projectRole
-    const selectedMemberId = selectedMember.id
-    const inactiveClass: string = "opacity-60 pointer-events-none"
-    const hasPermission = checkUserPermission(userProjectRole, "assign-project-role")
-
-    const dispatch = useAppDispatch()
-
-    const assignUserProjectRole = (role: EProjectRoles, memberId: number) => {
-      if (selectedMember.projectRole !== role) {
-        dispatch(updateMemberInProject({ projectRole: role, id: memberId }))
-      }
-      onClose()
-    }
-
-    const removeFromProject = (memberId: number) => {
-      openFixedLoadingHandler(true)
-      projectService
-        .removeMemberFromProject(project.id, memberId)
-        .then(() => {
-          dispatch(removeMemberFromProject(memberId))
-          onClose()
-        })
-        .catch((error) => {
-          toast.error(axiosErrorHandler.handleHttpError(error).message)
-        })
-        .finally(() => {
-          openFixedLoadingHandler(false)
-        })
-    }
-
-    return (
-      <ul className="mt-1 text-modal-text-cl">
-        <li
-          onClick={() => assignUserProjectRole(EProjectRoles.LEADER, selectedMemberId)}
-          className={`${hasPermission ? "" : inactiveClass} cursor-pointer hover:bg-hover-silver-bgcl py-2 px-3 text-sm font-medium`}
-        >
-          <p>Leader</p>
-        </li>
-        <li
-          onClick={() => assignUserProjectRole(EProjectRoles.MEMBER, selectedMemberId)}
-          className={`${hasPermission ? "" : inactiveClass} cursor-pointer hover:bg-hover-silver-bgcl py-2 px-3 text-sm font-medium`}
-        >
-          <p>Member</p>
-        </li>
-        {selectedMemberId === userInProject.id ? (
-          <li
-            onClick={leaveProject}
-            className={`cursor-pointer hover:bg-hover-silver-bgcl py-2 px-3 text-sm font-medium`}
-          >
-            <div className="flex items-center justify-between gap-x-3">
-              <span>Leave project</span>
-              <LogoutIcon fontSize="small" />
-            </div>
-          </li>
-        ) : (
-          <li
-            onClick={() => removeFromProject(selectedMemberId)}
-            className={`${checkUserPermission(userProjectRole, "add-remove-project-member") ? "" : inactiveClass} cursor-pointer hover:bg-hover-silver-bgcl py-2 px-3 text-sm font-medium`}
-          >
-            <div className="flex items-center justify-between gap-x-3">
-              <span>Remove from project</span>
-              <LogoutIcon fontSize="small" />
-            </div>
-          </li>
-        )}
-      </ul>
-    )
-  }
-
   return (
     <StyledPopover
       open={!!anchorEle}
@@ -146,7 +164,9 @@ const EditAuthorization = ({
             <CloseIcon fontSize="small" className="text-regular-text-cl m-auto" />
           </button>
         </header>
-        {selectedMember && <Roles selectedMember={selectedMember} userInProject={userInProject} />}
+        {selectedMember && (
+          <Roles selectedMember={selectedMember} userInProject={userInProject} onClose={onClose} />
+        )}
       </div>
     </StyledPopover>
   )
@@ -160,9 +180,16 @@ type TMemberItemProps = {
     member?: TProjectMemberData,
   ) => void
   isUser: boolean
+  userInProject: TProjectMemberData
 }
 
-const MemberItem = ({ memberData, selected, onOpenAuthorization, isUser }: TMemberItemProps) => {
+const MemberItem = ({
+  memberData,
+  selected,
+  onOpenAuthorization,
+  isUser,
+  userInProject,
+}: TMemberItemProps) => {
   const { id, avatar, fullName, email, projectRole } = memberData
 
   return (
@@ -181,16 +208,20 @@ const MemberItem = ({ memberData, selected, onOpenAuthorization, isUser }: TMemb
           <p className="text-xs leading-tight">{email}</p>
         </div>
       </div>
-      {/* <button
-        onClick={(e) => onOpenAuthorization(e, memberData)}
-        className="flex items-center gap-x-1 px-3 py-1 rounded bg-modal-btn-bgcl hover:bg-modal-btn-hover-bgcl"
-      >
-        <span className="text-sm">{displayProjectRole(projectRole)}</span>
-        <KeyboardArrowDownIcon fontSize="small" className="text-modal-text-cl" />
-      </button> */}
-      <div className="flex items-center gap-x-1 px-3 py-1 rounded bg-modal-btn-bgcl hover:bg-modal-btn-hover-bgcl">
-        <span className="text-sm">{displayProjectRole(projectRole)}</span>
-      </div>
+      {memberData.projectRole !== EProjectRoles.ADMIN &&
+      checkUserPermission(userInProject.projectRole, "assign-project-role") ? (
+        <button
+          onClick={(e) => onOpenAuthorization(e, memberData)}
+          className="flex items-center gap-x-1 px-3 py-1 rounded bg-modal-btn-bgcl hover:bg-modal-btn-hover-bgcl"
+        >
+          <span className="text-sm">{displayProjectRole(projectRole)}</span>
+          <KeyboardArrowDownIcon fontSize="small" className="text-modal-text-cl" />
+        </button>
+      ) : (
+        <div className="flex items-center gap-x-1 px-3 py-1 rounded bg-modal-btn-bgcl hover:bg-modal-btn-hover-bgcl">
+          <span className="text-sm">{displayProjectRole(projectRole)}</span>
+        </div>
+      )}
     </div>
   )
 }
@@ -248,6 +279,7 @@ export const ProjectMembers = ({ projectMembers, active }: TProjectMembersProps)
             selected={selectedMember?.id === member.id}
             isUser={userInProject.id === member.id}
             onOpenAuthorization={handleOpenAuthorization}
+            userInProject={userInProject}
           />
         ))}
       </div>

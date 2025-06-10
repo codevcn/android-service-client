@@ -19,7 +19,7 @@ export const convertUndefinedFieldsToNull = <T extends Record<string | number, a
   return result
 }
 
-export const convertProjectRoles = (projectRole: EApiProjectMemberRoles): EProjectRoles => {
+export const convertToProjectRoles = (projectRole: EApiProjectMemberRoles): EProjectRoles => {
   switch (projectRole) {
     case EApiProjectMemberRoles.Admin:
       return EProjectRoles.ADMIN
@@ -27,6 +27,17 @@ export const convertProjectRoles = (projectRole: EApiProjectMemberRoles): EProje
       return EProjectRoles.LEADER
     default:
       return EProjectRoles.MEMBER
+  }
+}
+
+export const convertToApiProjectRoles = (projectRole: EProjectRoles): EApiProjectMemberRoles => {
+  switch (projectRole) {
+    case EProjectRoles.ADMIN:
+      return EApiProjectMemberRoles.Admin
+    case EProjectRoles.LEADER:
+      return EApiProjectMemberRoles.Leader
+    default:
+      return EApiProjectMemberRoles.Member
   }
 }
 

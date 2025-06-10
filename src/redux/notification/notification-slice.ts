@@ -1,14 +1,17 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 import type { TNotificationData } from "../../services/types"
+import type { TNotificationUnreadChangeAmount } from "../../utils/types"
 
 type TInitialState = {
   notifications: TNotificationData[] | null
   filterResult: TNotificationData[] | null
+  unreadCount: number
 }
 
 const initialState: TInitialState = {
   notifications: null,
   filterResult: null,
+  unreadCount: 0,
 }
 
 export const notificationSlice = createSlice({
@@ -43,6 +46,9 @@ export const notificationSlice = createSlice({
         }
       }
     },
+    adjustUnreadCount: (state, action: PayloadAction<TNotificationUnreadChangeAmount>) => {
+      state.unreadCount += action.payload
+    },
   },
 })
 
@@ -52,4 +58,5 @@ export const {
   setFilterResult,
   updateSingleNotification,
   updateManyNotifications,
+  adjustUnreadCount,
 } = notificationSlice.actions

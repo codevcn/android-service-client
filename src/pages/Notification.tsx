@@ -21,6 +21,7 @@ import axiosErrorHandler from "../utils/axios-error-handler"
 import {
   addNotifications,
   setFilterResult,
+  adjustUnreadCount,
   setNotifications,
   updateManyNotifications,
   updateSingleNotification,
@@ -84,14 +85,14 @@ const NotificationItem = ({
 
   return (
     <div className="bg-modal-btn-bgcl rounded-lg relative text-sm">
-      <div className="py-1 px-2 h-6 bg-black rounded-tr-md rounded-tl-md relative">
-        {/* <div className="flex absolute top-1/2 right-2 -translate-y-1/2 z-20">
+      <div className="flex justify-between py-1 px-2 h-6 bg-black rounded-tr-md rounded-tl-md relative">
+        <div className="flex absolute top-1/2 right-2 -translate-y-1/2 z-20">
           {loadingId?.includes(id) ? (
             <LogoLoading size="small" />
           ) : seen ? (
             <Tooltip title="This is read" arrow>
               <div className="flex items-center gap-1 text-regular-text-cl">
-                <span className="text-xs">Seen</span>
+                <span className="text-xs">Read</span>
                 <DoneAllIcon sx={{ height: 16, width: 16 }} color="inherit" />
               </div>
             </Tooltip>
@@ -103,7 +104,7 @@ const NotificationItem = ({
               ></button>
             </Tooltip>
           )}
-        </div> */}
+        </div>
         {action === EApiNotificationAction.ACCEPT && (
           <div className="flex absolute top-1/2 right-2 -translate-y-1/2 z-20 items-center gap-1 text-success-text-cl">
             <DoneAllIcon sx={{ height: 16, width: 16 }} color="inherit" />
@@ -118,7 +119,7 @@ const NotificationItem = ({
         )}
       </div>
       <div className="flex space-x-3 p-2 rounded-br-md rounded-bl-md">
-        <div className="text-sm leading-snug space-y-1 whitespace-pre-wrap">
+        <div className="text-sm leading-snug space-y-1 whitespace-pre-wrap w-full">
           <div className="text-sm">{sanitizeHTMLString(description)}</div>
           {type === EApiNotificationTypes.PROJECT_INVITATION &&
             action === EApiNotificationAction.PENDING && (
@@ -152,11 +153,17 @@ type TNotificationsFilter = Partial<{
 
 type TIsMore = "is-more" | "no-more"
 
+const initialFilterData: TNotificationsFilter = {
+  onlyShowUnread: false,
+}
+
 const NotificationsList = () => {
-  const { notifications, filterResult } = useAppSelector(({ notification }) => notification)
+  const { notifications, filterResult, unreadCount } = useAppSelector(
+    ({ notification }) => notification,
+  )
   const dispatch = useAppDispatch()
   const [loadingId, setLoadingId] = useState<TNotificationData["id"][]>()
-  const filterDataRef = useRef<TNotificationsFilter>({ onlyShowUnread: true })
+  const filterDataRef = useRef<TNotificationsFilter>(initialFilterData)
   const loadMoreTargetRef = useRef<HTMLDivElement>(null)
   const loadMoreObserverRef = useRef<IntersectionObserver>()
   const [loadingMore, setLoadingMore] = useState<boolean>(false)
@@ -171,6 +178,9 @@ const NotificationsList = () => {
       .updateNotification({ id: notificationId, seen })
       .then(() => {
         dispatch(updateSingleNotification({ id: notificationId, seen }))
+        if (seen) {
+          dispatch(adjustUnreadCount(-1))
+        }
       })
       .catch((error) => {
         toast.error(axiosErrorHandler.handleHttpError(error).message)
@@ -181,19 +191,21 @@ const NotificationsList = () => {
   }
 
   const handleMarkAllAsRead = () => {
-    // đã bỏ
-    // setLoadingId(notifications?.map(({ id }) => id))
-    // notificationService
-    //    .markAllAsRead()
-    //    .then(() => {
-    //       dispatch(updateManyNotifications({ seen: true }))
-    //    })
-    //    .catch((error) => {
-    //       toast.error(axiosErrorHandler.handleHttpError(error).message)
-    //    })
-    //    .finally(() => {
-    //       setLoadingId(undefined)
-    //    })
+    if (notifications && notifications.length > 0) {
+      setLoadingId(notifications.map(({ id }) => id))
+      notificationService
+        .markAllAsRead()
+        .then(() => {
+          dispatch(updateManyNotifications({ seen: true }))
+          dispatch(adjustUnreadCount(-unreadCount))
+        })
+        .catch((error) => {
+          toast.error(axiosErrorHandler.handleHttpError(error).message)
+        })
+        .finally(() => {
+          setLoadingId(undefined)
+        })
+    }
   }
 
   const filterNotifications = (
@@ -297,18 +309,23 @@ const NotificationsList = () => {
     <>
       <div className="text-sm py-2 px-3 w-full">
         <div className="flex items-center gap-3 justify-between">
-          {/* <OnlyShowUnreadBtn
-            control={<Android12Switch defaultChecked onChange={onlyShowUnreadNotifications} />}
+          <OnlyShowUnreadBtn
+            control={
+              <Android12Switch
+                defaultChecked={filterDataRef.current.onlyShowUnread}
+                onChange={onlyShowUnreadNotifications}
+              />
+            }
             label="Only show unread"
-          /> */}
-          {/* {checkAtLeastOneUnread(finalNotifications) && (
+          />
+          {checkAtLeastOneUnread(finalNotifications) && (
             <button
               onClick={handleMarkAllAsRead}
               className="text-xs py-1 px-2 rounded bg-modal-btn-bgcl hover:bg-modal-btn-hover-bgcl"
             >
               Mark all as read
             </button>
-          )} */}
+          )}
         </div>
       </div>
       {finalNotifications.length > 0 ? (
@@ -351,18 +368,22 @@ type TNotificationButtonProps = {
 }
 
 const NotificationButton = ({ onOpenNotificationsList }: TNotificationButtonProps) => {
-  const [unreadCount, setUnreadCount] = useState<number>(0)
+  const { unreadCount } = useAppSelector(({ notification }) => notification)
+  const dispatch = useAppDispatch()
+
+  const handleCountUnreadNotifications = () => {
+    notificationService
+      .countUnreadNotifcations()
+      .then((res) => {
+        dispatch(adjustUnreadCount(res.count))
+      })
+      .catch((error) => {
+        toast.error(axiosErrorHandler.handleHttpError(error).message)
+      })
+  }
 
   useEffect(() => {
-    // đã bỏ
-    // notificationService
-    //    .countUnreadNotifcations()
-    //    .then((res) => {
-    //       setUnreadCount(res.total)
-    //    })
-    //    .catch((error) => {
-    //       toast.error(axiosErrorHandler.handleHttpError(error).message)
-    //    })
+    handleCountUnreadNotifications()
   }, [])
 
   return (
@@ -387,6 +408,17 @@ export const Notification = () => {
     }
   }
 
+  const handleTestNotify = () => {
+    notificationService
+      .testNotify()
+      .then(() => {
+        toast.success("Test notify sent")
+      })
+      .catch((error) => {
+        toast.error(axiosErrorHandler.handleHttpError(error).message)
+      })
+  }
+
   useEffect(() => {
     const generalListener = (e: MessageEvent) => {
       const data = JSON.parse(e.data) as TNotificationEventData
@@ -404,6 +436,7 @@ export const Notification = () => {
           },
         ]),
       )
+      dispatch(adjustUnreadCount(1))
     }
     eventSource.current?.addEventListener(ESSEEvents.GENERAL, generalListener)
     return () => {
@@ -419,7 +452,7 @@ export const Notification = () => {
         anchorEl={anchorEle}
         open={!!anchorEle}
         onClose={() => handleOpenNotification()}
-        TransitionComponent={Fade}
+        slots={{ transition: Fade }}
         keepMounted
         anchorOrigin={{
           vertical: "bottom",

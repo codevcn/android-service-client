@@ -44,11 +44,3 @@ export const apiRejectProjectInvitation = async ({
 
 export const apiGetJoinedProjects = async (): Promise<TProjectsResponse> =>
   clientAxios.get("/projects/joined")
-
-export const apiRemoveMemberFromProject = async (
-  projectId: number,
-  userId: number,
-): Promise<TMessageResponse> =>
-  clientAxios.delete(`/projects/remove-project-member`, {
-    params: { projectId: parseInt(projectId + ""), userId: parseInt(userId + "") },
-  })

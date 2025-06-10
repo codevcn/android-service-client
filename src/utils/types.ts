@@ -142,3 +142,5 @@ export type TFilterProjectsWorkerMsg = {
 export type TFilterProjectsWorkerRes = TProjectPreviewData["id"][]
 
 export type TNotificationEventData = TNotification
+
+export type TNotificationUnreadChangeAmount = number

@@ -4,6 +4,7 @@ import type {
   TNotificationResponse,
   TNotificationsResponse,
   TMessageResponse,
+  TCountUnreadNotificationsResponse,
 } from "./types/output-types"
 
 export const apiGetNotifications = async (): Promise<TNotificationsResponse> =>
@@ -18,3 +19,12 @@ export const apiDeleteNotification = async ({
   notificationId,
 }: TNotificationIdParam): Promise<TMessageResponse> =>
   clientAxios.delete(`/notifications/${notificationId}`)
+
+export const apiTestNotify = async (): Promise<TMessageResponse> =>
+  clientAxios.post(`/notifications/test-notify`, {}, { params: { userId: 4 } })
+
+export const apiCountUnreadNotifications = async (): Promise<TCountUnreadNotificationsResponse> =>
+  clientAxios.get(`/notifications/count-unread`)
+
+export const apiMarkAllAsRead = async (): Promise<TMessageResponse> =>
+  clientAxios.put(`/notifications/mark-all-as-read`)

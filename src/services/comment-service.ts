@@ -2,7 +2,7 @@ import type { TCommentData } from "./types"
 import { apiCreateComment, apiDeleteComment, apiUpdateComment } from "./apis/comment-apis"
 import { apiGetUser } from "./apis/user-apis"
 import type { TSuccess } from "../utils/types"
-import { convertProjectRoles, convertUserApiData } from "../utils/api-converters/api-converters"
+import { convertToProjectRoles, convertUserApiData } from "../utils/api-converters/api-converters"
 
 class CommentService {
   async createNewComment(taskId: number, userId: number, content: string): Promise<TCommentData> {
@@ -20,7 +20,7 @@ class CommentService {
       createdAt: comment.createdAt,
       user: {
         ...convertUserApiData(user),
-        projectRole: convertProjectRoles(comment.userRole),
+        projectRole: convertToProjectRoles(comment.userRole),
       },
       isTaskResult: false,
     }

@@ -184,6 +184,10 @@ export type TStatistics = {
   }[]
 }
 
+export type TCountUnreadNotifications = {
+  count: number
+}
+
 // API Response types
 export type TGeneralSearchResponse = TApiResponse<TLibResponse<TGeneralSearch>>
 export type TAuthResponse = TApiResponse<TLibResponse<TJwtResponse>>
@@ -209,3 +213,6 @@ export type TProjectMembersResponse = TApiResponse<TLibResponse<TProjectMember[]
 export type TMsgApiResponse = TApiResponse<TLibResponse<TMessageResponse>>
 export type TTaskMemberResponse = TApiResponse<TLibResponse<TTaskMember[]>>
 export type TStatisticsResponse = TApiResponse<TLibResponse<TStatistics>>
+export type TCountUnreadNotificationsResponse = TApiResponse<
+  TLibResponse<TCountUnreadNotifications>
+>

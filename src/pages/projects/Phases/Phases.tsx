@@ -27,6 +27,7 @@ import { ProjectRoleGuard } from "../../../components/ResourceGuard"
 import { phaseService } from "../../../services/phase-service"
 import { useLocation, useSearchParams } from "react-router-dom"
 import { ENavigateStates, EQueryStringKeys } from "../../../utils/enums"
+import { openFixedLoadingHandler } from "../../../utils/helpers"
 
 type TAddNewPhaseProps = {
   currentFinalPos: number | null
@@ -311,6 +312,7 @@ export const Phases = ({ userInProject }: TPhasesProps) => {
   const firstJumpRef = useRef<boolean>(true)
 
   const getPhases = (projectId: number) => {
+    openFixedLoadingHandler(true)
     phaseService
       .getPhases(projectId)
       .then((res) => {
@@ -318,6 +320,9 @@ export const Phases = ({ userInProject }: TPhasesProps) => {
       })
       .catch((error) => {
         toast.error(axiosErrorHandler.handleHttpError(error).message)
+      })
+      .finally(() => {
+        openFixedLoadingHandler(false)
       })
   }
 

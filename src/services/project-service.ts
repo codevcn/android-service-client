@@ -1,6 +1,9 @@
 // đã sửa xong file này
 
-import { convertProjectRoles } from "../utils/api-converters/api-converters"
+import {
+  convertToApiProjectRoles,
+  convertToProjectRoles,
+} from "../utils/api-converters/api-converters"
 import type {
   TProjectData,
   TProjectMemberData,
@@ -8,7 +11,12 @@ import type {
   TUserInProjectData,
 } from "./types"
 import type { TSuccess } from "../utils/types"
-import { apiGetProjectMember, apiGetProjectMembers } from "./apis/member-apis"
+import {
+  apiChangeRole,
+  apiGetProjectMember,
+  apiGetProjectMembers,
+  apiRemoveMemberFromProject,
+} from "./apis/member-apis"
 import {
   apiCreateProject,
   apiAcceptProjectInvitation,
@@ -20,11 +28,11 @@ import {
   apiUpdateProject,
   apiGetJoinedProjects,
   apiDeleteProject,
-  apiRemoveMemberFromProject,
 } from "./apis/project-apis"
 import { projectBackgrounds, staticStarredValue } from "../lib/project-static-data"
 import { apiGetUser } from "./apis/user-apis"
 import { convertUserApiData } from "../utils/api-converters/api-converters"
+import { EProjectRoles } from "../utils/enums"
 
 class ProjectService {
   async getUserInfoInProject(userId: number, projectId: number): Promise<TUserInProjectData> {
@@ -33,7 +41,7 @@ class ProjectService {
       throw new Error("User not found in project")
     }
     const userInfoInProject: TUserInProjectData = {
-      projectRole: convertProjectRoles(data.data.role),
+      projectRole: convertToProjectRoles(data.data.role),
     }
     return userInfoInProject
   }
@@ -91,7 +99,7 @@ class ProjectService {
         }
         return {
           ...convertUserApiData(user),
-          projectRole: convertProjectRoles(member.role),
+          projectRole: convertToProjectRoles(member.role),
         }
       }),
     )
@@ -200,6 +208,10 @@ class ProjectService {
 
   async removeMemberFromProject(projectId: number, userId: number): Promise<void> {
     await apiRemoveMemberFromProject(projectId, userId)
+  }
+
+  async changeRole(projectId: number, userId: number, role: EProjectRoles): Promise<void> {
+    await apiChangeRole(projectId, userId, convertToApiProjectRoles(role))
   }
 }
 

@@ -180,7 +180,7 @@ export type TProjectRequestData = {
 }
 
 export type TCountUnreadNotificationsData = {
-  total: number
+  count: number
 }
 
 export type TGeneralSearchData = {
