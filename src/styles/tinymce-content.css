@@ -1,0 +1,64 @@
+:root {
+   /* text color */
+   --ht-regular-text-cl: #9fadbc;
+   --ht-rich-file-title-cl: #579dff;
+
+   /* background color */
+   --ht-confirm-btn-bgcl: #579dff;
+}
+
+h1 {
+   font-size: 2rem;
+}
+h2 {
+   font-size: 1.5rem;
+}
+h3 {
+   font-size: 1.3rem;
+}
+h4,
+p,
+li {
+   font-size: 14px;
+}
+h5 {
+   font-size: 0.83rem;
+}
+h6 {
+   font-size: 0.67rem;
+}
+
+a {
+   color: var(--ht-confirm-btn-bgcl);
+}
+
+#tinymce {
+   margin: 0 16px !important;
+   padding: 0 !important;
+   color: var(--ht-regular-text-cl) !important;
+   min-height: 100px !important;
+}
+
+#tinymce::before {
+   color: var(--ht-regular-text-cl) !important;
+}
+
+#tinymce ol {
+   list-style: decimal;
+}
+
+#tinymce ul {
+   list-style: disc;
+}
+
+#tinymce ol li::marker {
+   color: var(--ht-regular-text-cl);
+}
+
+#tinymce ul li::marker {
+   color: var(--ht-regular-text-cl);
+}
+
+#tinymce .css-rich-file-title-template {
+   color: var(--ht-rich-file-title-cl);
+}

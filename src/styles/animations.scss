@@ -1,0 +1,32 @@
+@keyframes logo-loading-medium {
+   0% {
+      transform: scaleY(1);
+   }
+   50% {
+      transform: scaleY(4);
+   }
+   100% {
+      transform: scaleY(1);
+   }
+}
+
+@keyframes logo-loading-small {
+   0% {
+      transform: scaleY(1);
+   }
+   50% {
+      transform: scaleY(2);
+   }
+   100% {
+      transform: scaleY(1);
+   }
+}
+
+@keyframes highlight-phase {
+   0% {
+      outline: 2px var(--ht-outline-cl) solid;
+   }
+   100% {
+      outline: none;
+   }
+}
