@@ -3,7 +3,7 @@
  */
 
 import { Avatar, styled, TextField, Tooltip, AvatarGroup } from "@mui/material"
-import type { TPhaseData, TTaskPreviewData } from "../../../services/types"
+import type { TPhaseData, TProjectMemberData, TTaskPreviewData } from "../../../services/types"
 import ReorderIcon from "@mui/icons-material/Reorder"
 import AddIcon from "@mui/icons-material/Add"
 import { KeyboardEvent, useMemo, useState } from "react"
@@ -42,6 +42,7 @@ import { toast } from "react-toastify"
 import axiosErrorHandler from "../../../utils/axios-error-handler"
 import type { TTaskStatus } from "../../../utils/types"
 import { taskService } from "../../../services/task-service"
+import { checkUserPermission } from "../../../configs/user-permissions"
 
 type TTaskPreviewProps = {
   taskPreviewData: TTaskPreviewData
@@ -55,7 +56,6 @@ const Task = ({ taskPreviewData, className, phaseData }: TTaskPreviewProps) => {
   const isComplete = status === "complete"
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id })
   const dispatch = useAppDispatch()
-  const project = useAppSelector(({ project }) => project.project!)
 
   const openTaskDetails = () => {
     eventEmitter.emit(EInternalEvents.OPEN_TASK_DETAILS_MODAL, true, id)
@@ -65,7 +65,7 @@ const Task = ({ taskPreviewData, className, phaseData }: TTaskPreviewProps) => {
     e.stopPropagation()
     const newStatus: TTaskStatus = status === "complete" ? "uncomplete" : "complete"
     taskService
-      .handleMarkTaskComplete(id, newStatus, project.id)
+      .handleMarkTaskComplete(id, newStatus)
       .then(() => {
         dispatch(updateTaskPreview({ ...taskPreviewData, phaseId, status: newStatus }))
         dispatch(updateTaskData({ status: newStatus }))
@@ -115,18 +115,20 @@ const Task = ({ taskPreviewData, className, phaseData }: TTaskPreviewProps) => {
           </h3>
         </div>
         <div className="flex items-center justify-between mt-2">
-          {hasDescription && (
+          {hasDescription ? (
             <Tooltip title="This card has a description." arrow>
               <div>
                 <ReorderIcon sx={{ fontSize: 16 }} />
               </div>
             </Tooltip>
+          ) : (
+            <span></span>
           )}
           <StyledAvatarGroup max={3}>
             {taskMembers &&
               taskMembers.length > 0 &&
               taskMembers.map(({ fullName, avatar, id }) => (
-                <button className="h-fit w-fit" key={id}>
+                <div className="h-fit w-fit" key={id}>
                   <Tooltip title={fullName} arrow>
                     {avatar ? (
                       <Avatar alt="User Avatar" src={avatar} sx={{ height: 24, width: 24 }} />
@@ -136,7 +138,7 @@ const Task = ({ taskPreviewData, className, phaseData }: TTaskPreviewProps) => {
                       </Avatar>
                     )}
                   </Tooltip>
-                </button>
+                </div>
               ))}
           </StyledAvatarGroup>
         </div>
@@ -270,12 +272,51 @@ const OverlayItem = ({ taskPreviewData }: TOverlayItemProps) => {
   )
 }
 
-type TTaskPreviewsProps = {
-  phaseData: TPhaseData
+type TFixedTaskPreviewsProps = {
   taskPreviews: TTaskPreviewData[]
+  phaseData: TPhaseData
+  userInProject: TProjectMemberData
 }
 
-export const TaskPreviews = ({ taskPreviews, phaseData }: TTaskPreviewsProps) => {
+export const FixedTaskPreviews = ({
+  taskPreviews,
+  phaseData,
+  userInProject,
+}: TFixedTaskPreviewsProps) => {
+  return (
+    <>
+      <div className="flex flex-col flex-[1_1_auto] css-tasks-styled-scrollbar overflow-y-auto min-h-[70px] py-1 px-2">
+        {taskPreviews && taskPreviews.length > 0 ? (
+          taskPreviews.map((task) => (
+            <Task key={task.id} taskPreviewData={task} phaseData={phaseData} />
+          ))
+        ) : (
+          <div className="text-regular-text-cl w-full text-center m-auto h-fit leading-tight">
+            This phase has no task now.
+          </div>
+        )}
+      </div>
+      {checkUserPermission(userInProject.projectRole, "CRUD-task") && (
+        <AddNewTask
+          phaseData={phaseData}
+          finalTaskPosition={taskPreviews[taskPreviews.length - 1]?.position || null}
+        />
+      )}
+    </>
+  )
+}
+
+type TTaskPreviewsCanDragAndDropProps = {
+  phaseData: TPhaseData
+  taskPreviews: TTaskPreviewData[]
+  userInProject: TProjectMemberData
+}
+
+const TaskPreviewsCanDragAndDrop = ({
+  userInProject,
+  taskPreviews,
+  phaseData,
+}: TTaskPreviewsCanDragAndDropProps) => {
   const phaseId = phaseData.id
   const [draggingId, setDraggingId] = useState<number | null>(null)
   const sensors = useSensors(
@@ -385,11 +426,35 @@ export const TaskPreviews = ({ taskPreviews, phaseData }: TTaskPreviewsProps) =>
           ) : null}
         </DragOverlay>
       </DndContext>
-      <AddNewTask
-        phaseData={phaseData}
-        finalTaskPosition={sortedDndItems[sortedDndItems.length - 1]?.position || null}
-      />
+      {checkUserPermission(userInProject.projectRole, "CRUD-task") && (
+        <AddNewTask
+          phaseData={phaseData}
+          finalTaskPosition={sortedDndItems[sortedDndItems.length - 1]?.position || null}
+        />
+      )}
     </>
+  )
+}
+
+type TTaskPreviewsProps = {
+  phaseData: TPhaseData
+  taskPreviews: TTaskPreviewData[]
+  userInProject: TProjectMemberData
+}
+
+export const TaskPreviews = ({ phaseData, taskPreviews, userInProject }: TTaskPreviewsProps) => {
+  return checkUserPermission(userInProject.projectRole, "arrange-phase-task") ? (
+    <TaskPreviewsCanDragAndDrop
+      phaseData={phaseData}
+      taskPreviews={taskPreviews || []}
+      userInProject={userInProject}
+    />
+  ) : (
+    <FixedTaskPreviews
+      taskPreviews={taskPreviews || []}
+      phaseData={phaseData}
+      userInProject={userInProject}
+    />
   )
 }
 
@@ -399,6 +464,9 @@ const StyledAvatarGroup = styled(AvatarGroup)({
     height: 28,
     width: 28,
     border: "none",
+    "& .MuiAvatar-root": {
+      border: "1.5px solid gray",
+    },
   },
 })
 

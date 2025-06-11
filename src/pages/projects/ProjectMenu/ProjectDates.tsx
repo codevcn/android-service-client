@@ -1,54 +1,38 @@
-//>>> removed useCallback at function "saveDates"
-import {
-  Popover,
-  styled,
-  FormHelperText,
-  FormControl,
-  MenuItem,
-  InputLabel,
-  Select,
-  TextField,
-} from "@mui/material"
+import dayjs from "dayjs"
 import { useAppDispatch, useAppSelector } from "../../../hooks/redux"
-import { updateTaskData } from "../../../redux/project/project-slice"
-import { useCallback, useEffect, useRef, useState } from "react"
-import CloseIcon from "@mui/icons-material/Close"
-import { DateCalendar } from "@mui/x-date-pickers/DateCalendar"
-import dayjs, { Dayjs } from "dayjs"
-import { TimeField } from "@mui/x-date-pickers/TimeField"
+import { updateProject } from "../../../redux/project/project-slice"
+import { useCallback, useEffect, useState } from "react"
+import { Dayjs } from "dayjs"
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"
-import { DateField } from "@mui/x-date-pickers/DateField"
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown"
-import { useUserInProject } from "../../../hooks/user"
-import type { TTaskDatesBoardData } from "../../../utils/types"
-import { EInternalEvents, eventEmitter } from "../../../utils/events"
-import { checkUserPermission } from "../../../configs/user-permissions"
 import { useDebounce } from "../../../hooks/debounce"
-import { taskService } from "../../../services/task-service"
+import { TTaskDatesBoardData } from "../../../utils/types"
 import { toast } from "react-toastify"
 import axiosErrorHandler from "../../../utils/axios-error-handler"
 import { LogoLoading } from "../../../components/Loadings"
 import validator from "validator"
-import { ELocalTimeFormat } from "../../../utils/enums"
-
-enum EDuteDateReminder {
-  MINUTES_BEFORE_0 = "0m",
-  MINUTES_BEFORE_5 = "5m",
-  MINUTES_BEFORE_10 = "10m",
-}
+import { EInternalEvents, eventEmitter } from "../../../utils/events"
+import CloseIcon from "@mui/icons-material/Close"
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown"
+import { Popover, styled, TextField } from "@mui/material"
+import { DateCalendar } from "@mui/x-date-pickers/DateCalendar"
+import { TimeField } from "@mui/x-date-pickers/TimeField"
+import { DateField } from "@mui/x-date-pickers/DateField"
+import type { TProjectData } from "../../../services/types"
+import { projectService } from "../../../services/project-service"
 
 type TIsSaving = "none" | "due-date" | "seconds"
 
-const DatesBoard = () => {
+type TProjectDatesProps = {
+  projectData: TProjectData
+}
+
+const DatesBoard = ({ projectData }: TProjectDatesProps) => {
   const [boardData, setBoardData] = useState<TTaskDatesBoardData>()
-  const { taskData } = useAppSelector(({ project }) => project)
   const [newDueDate, setNewDueDate] = useState<Dayjs | null>(null)
   const dateAdapter = new AdapterDayjs()
-  const reminderRef = useRef<HTMLInputElement>()
   const dispatch = useAppDispatch()
   const debounce = useDebounce()
   const [isSaving, setIsSaving] = useState<TIsSaving>("none")
-  const project = useAppSelector((state) => state.project.project!)
   const [seconds, setSeconds] = useState<string>("Unset")
 
   const anchorEle = boardData?.anchorEle || null
@@ -81,22 +65,16 @@ const DatesBoard = () => {
   }
 
   const saveSeconds = () => {
-    if (seconds === "Unset" || !taskData) {
+    if (seconds === "Unset" || !projectData) {
       return
     }
     setIsSaving("seconds")
     const isoString = dayjs().add(parseInt(seconds), "seconds").toISOString()
-    taskService
-      .updateTask(
-        taskData.phaseId,
-        taskData.id,
-        {
-          dueDate: isoString,
-        },
-        project.id,
-      )
+    console.log('>>> iso string:', isoString)
+    projectService
+      .updateProject(projectData.id, { endDate: isoString })
       .then(() => {
-        dispatch(updateTaskData({ dueDate: isoString }))
+        dispatch(updateProject({ endDate: isoString }))
       })
       .catch((error) => {
         toast.error(axiosErrorHandler.handleHttpError(error).message)
@@ -114,20 +92,13 @@ const DatesBoard = () => {
   )
 
   const saveDates = () => {
-    if (newDueDate && taskData) {
+    if (newDueDate && projectData) {
       const isoString = newDueDate.toISOString()
       setIsSaving("due-date")
-      taskService
-        .updateTask(
-          taskData.phaseId,
-          taskData.id,
-          {
-            dueDate: isoString,
-          },
-          project.id,
-        )
+      projectService
+        .updateProject(projectData.id, { endDate: isoString })
         .then(() => {
-          dispatch(updateTaskData({ dueDate: isoString }))
+          dispatch(updateProject({ endDate: isoString }))
         })
         .catch((error) => {
           toast.error(axiosErrorHandler.handleHttpError(error).message)
@@ -139,11 +110,11 @@ const DatesBoard = () => {
   }
 
   useEffect(() => {
-    if (taskData) {
-      const taskDueDate = taskData.dueDate
-      setNewDueDate(taskDueDate ? dayjs(taskDueDate) : null)
+    if (projectData) {
+      const projectEndDate = projectData.endDate
+      setNewDueDate(projectEndDate ? dayjs(projectEndDate) : null)
     }
-  }, [taskData])
+  }, [projectData])
 
   useEffect(() => {
     eventEmitter.on(EInternalEvents.OPEN_TASK_DATES_BOARD, (boardData) => {
@@ -197,17 +168,17 @@ const DatesBoard = () => {
               />
             </div>
             <div className="w-full mt-3">
-              <h3 className="text-sm font-bold">Due Date & Due Time</h3>
+              <h3 className="text-sm font-bold">End Date & End Time</h3>
               <div className="flex pt-2 gap-x-2">
                 <StyledDueDate
-                  label="Due Date"
+                  label="End Date"
                   value={newDueDate}
                   onChange={handleTypeDate}
                   format="DD/MM/YYYY"
                   minDate={dayjs()}
                 />
                 <StyledTimeDate
-                  label="Due Time"
+                  label="End Time"
                   value={newDueDate}
                   onChange={handleTypeDate}
                   format="HH:mm:ss"
@@ -215,37 +186,6 @@ const DatesBoard = () => {
                 />
               </div>
             </div>
-            {/* <FormControl fullWidth sx={{ marginTop: 2 }}>
-              <StyledInputLabel id="due-date-reminder">Set due date reminder</StyledInputLabel>
-              <StyledSelectReminder
-                labelId="due-date-reminder"
-                label="Set due date reminder"
-                defaultValue=""
-                className=""
-                MenuProps={{
-                  MenuListProps: {
-                    className: "bg-modal-popover-bgcl bor border border-regular-border-cl",
-                  },
-                }}
-                inputRef={reminderRef}
-              >
-                <StyledMenuItem value="">
-                  <em>None</em>
-                </StyledMenuItem>
-                <StyledMenuItem value={EDuteDateReminder.MINUTES_BEFORE_0}>
-                  At time of due date
-                </StyledMenuItem>
-                <StyledMenuItem value={EDuteDateReminder.MINUTES_BEFORE_5}>
-                  5 Minutes before
-                </StyledMenuItem>
-                <StyledMenuItem value={EDuteDateReminder.MINUTES_BEFORE_10}>
-                  10 Minutes before
-                </StyledMenuItem>
-              </StyledSelectReminder>
-              <FormHelperText sx={{ color: "var(--ht-regular-text-cl)" }}>
-                Reminders will be sent to all members and watchers of this card.
-              </FormHelperText>
-            </FormControl> */}
             <div className="pb-4 mt-3">
               <button
                 onClick={saveDates}
@@ -298,37 +238,31 @@ const DatesBoard = () => {
   )
 }
 
-type TTaskDueDateProps = {
-  dueDate: string | null
-}
-
-export const TaskDueDate = ({ dueDate }: TTaskDueDateProps) => {
-  const userInProject = useUserInProject()!
-  const isPermitted = checkUserPermission(userInProject.projectRole, "assign-task-due-date")
+export const ProjectDates = () => {
+  const projectData = useAppSelector(({ project }) => project.project!)
+  const { endDate } = projectData
 
   const openDueDatesBoard = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (isPermitted) {
-      eventEmitter.emit(EInternalEvents.OPEN_TASK_DATES_BOARD, {
-        anchorEle: e.currentTarget,
-      })
-    }
+    eventEmitter.emit(EInternalEvents.OPEN_TASK_DATES_BOARD, {
+      anchorEle: e.currentTarget,
+    })
   }
 
   return (
     <div className="flex flex-col text-regular-text-cl">
-      <h3 className="text-sm font-bold mb-1">Due Date</h3>
+      <h3 className="text-sm font-bold mb-1 pl-1">Project End Date</h3>
       <button
         onClick={openDueDatesBoard}
-        className="flex items-center grow gap-x-2 bg-modal-btn-bgcl hover:bg-modal-btn-hover-bgcl rounded py-1 px-2"
+        className="flex items-center justify-between grow gap-x-2 bg-modal-btn-bgcl hover:bg-modal-btn-hover-bgcl rounded py-1 px-2"
       >
-        {dueDate ? (
-          <span className="text-sm">{dayjs(dueDate).format("LLL")}</span>
+        {endDate ? (
+          <span className="text-sm">{dayjs(endDate).format("LLL")}</span>
         ) : (
           <span className="text-sm">Unset</span>
         )}
-        {isPermitted && <KeyboardArrowDownIcon fontSize="small" className="text-regular-text-cl" />}
+        <KeyboardArrowDownIcon fontSize="small" className="text-regular-text-cl" />
       </button>
-      <DatesBoard />
+      <DatesBoard projectData={projectData} />
     </div>
   )
 }
@@ -436,52 +370,4 @@ const StyledDueDate = styled(DateField)(DueDateTimeStyling)
 
 const StyledTimeDate = styled(TimeField)(DueDateTimeStyling)
 
-const StyledSelectReminder = styled(Select)({
-  "&.MuiInputBase-root": {
-    "& .MuiSelect-select": {
-      padding: 10,
-    },
-    "& svg": {
-      fill: "var(--ht-regular-text-cl)",
-    },
-    "& .MuiInputBase-input": {
-      color: "var(--ht-regular-text-cl)",
-    },
-    "& .MuiOutlinedInput-notchedOutline": {
-      borderWidth: 2,
-      borderColor: "var(--ht-regular-border-cl)",
-    },
-    "&:hover .MuiOutlinedInput-notchedOutline": {
-      borderColor: "var(--ht-outline-cl)",
-    },
-    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-      borderColor: "var(--ht-outline-cl)",
-    },
-  },
-})
-
 const StyledTextField = styled(TextField)(DueDateTimeStyling)
-
-const StyledInputLabel = styled(InputLabel)({
-  transform: "translate(14px, 10px) scale(1)",
-  color: "var(--ht-regular-text-cl)",
-  "&.Mui-focused": {
-    color: "var(--ht-outline-cl)",
-    transform: "translate(14px, -9px) scale(0.75)",
-  },
-  "&.MuiFormLabel-filled": {
-    transform: "translate(14px, -9px) scale(0.75)",
-  },
-})
-
-const StyledMenuItem = styled(MenuItem)({
-  color: "var(--ht-regular-text-cl)",
-  "&:hover": {
-    backgroundColor: "var(--ht-modal-btn-hover-bgcl)",
-  },
-  "&.Mui-selected": {
-    fontWeight: "bold",
-    color: "var(--ht-selected-text-cl)",
-    backgroundColor: "#3299ff24",
-  },
-})

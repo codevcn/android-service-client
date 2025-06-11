@@ -5,10 +5,11 @@ import ReorderIcon from "@mui/icons-material/Reorder"
 import { updateTaskData, updateTaskPreview } from "../../../redux/project/project-slice"
 import { CustomRichTextContent } from "../../../components/RichTextContent"
 import { CustomRichTextEditor } from "../../../components/RichTextEditor"
-import { useUser } from "../../../hooks/user"
+import { useUser, useUserInProject } from "../../../hooks/user"
 import { taskService } from "../../../services/task-service"
 import axiosErrorHandler from "../../../utils/axios-error-handler"
 import { toast } from "react-toastify"
+import { checkUserPermission } from "../../../configs/user-permissions"
 
 type TDescriptionProps = {
   description: string | null
@@ -23,6 +24,7 @@ export const Description = ({ description, taskId, phaseId }: TDescriptionProps)
   const dispatch = useAppDispatch()
   const user = useUser()!
   const project = useAppSelector((state) => state.project.project!)
+  const userInProject = useUserInProject()!
 
   const focusBlurEditor = (editorWrapperId: string, type: "focus" | "blur") => {
     const editorWrapper = editorsContainerRef.current?.querySelector<HTMLDivElement>(
@@ -52,6 +54,10 @@ export const Description = ({ description, taskId, phaseId }: TDescriptionProps)
     }
   }
 
+  const openEditorHandler = () => {
+    setOpenEditor(true)
+  }
+
   return (
     <div className="mt-6">
       <div className="flex items-center justify-between">
@@ -61,13 +67,15 @@ export const Description = ({ description, taskId, phaseId }: TDescriptionProps)
           </div>
           <h3 className="text-regular-text-cl font-bold text-base">Description</h3>
         </div>
-        <button
-          hidden={openEditor}
-          onClick={() => setOpenEditor(true)}
-          className="py-[5px] px-4 rounded text-regular-text-cl text-sm font-semibold bg-modal-btn-bgcl hover:bg-modal-btn-hover-bgcl"
-        >
-          Edit
-        </button>
+        {checkUserPermission(userInProject.projectRole, "CRUD-task") && (
+          <button
+            hidden={openEditor}
+            onClick={openEditorHandler}
+            className="py-[5px] px-4 rounded text-regular-text-cl text-sm font-semibold bg-modal-btn-bgcl hover:bg-modal-btn-hover-bgcl"
+          >
+            Edit
+          </button>
+        )}
       </div>
       <div className="mt-2 pl-10 w-full">
         {!openEditor &&

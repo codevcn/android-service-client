@@ -8,10 +8,12 @@ import {
   apiMovePhase,
   apiUpdatePhase,
 } from "./apis/phase-apis"
-import { apiGetTasksByPhase } from "./apis/task-apis"
-import type { TPhaseData, TTaskPreviewData } from "./types"
+import type { TPhaseData } from "./types"
 import type { TPhaseInput } from "./apis/types/input-types"
-import { convertToTaskStatus } from "../utils/api-converters/api-converters"
+import { convertISOStringToLocalTime } from "../utils/helpers"
+import dayjs from "dayjs"
+import { ELocalTimeFormat } from "../utils/enums"
+import { taskService } from "./task-service"
 
 class PhaseService {
   async getPhases(projectId: number): Promise<TPhaseData[]> {
@@ -20,28 +22,13 @@ class PhaseService {
     const phasesData: TPhaseData[] = []
     const phases = data.data
     for (const phase of phases) {
-      const {
-        data: { data: tasks },
-      } = await apiGetTasksByPhase(phase.id)
-      if (!tasks) throw new Error("No tasks found")
+      const tasks = await taskService.getTasksByPhase(phase.id)
       phasesData.push({
         id: phase.id,
         title: phase.phaseName,
         position: phase.orderIndex,
         description: phase.description,
-        taskPreviews: await Promise.all(
-          tasks.map(async (task): Promise<TTaskPreviewData> => {
-            return {
-              dueDate: task.dueDate || null,
-              hasDescription: !!task.description,
-              id: task.id,
-              position: task.orderIndex,
-              status: convertToTaskStatus(task.status),
-              taskMembers: [],
-              title: task.taskName,
-            }
-          }),
-        ),
+        taskPreviews: tasks,
       })
     }
     return phasesData
@@ -55,7 +42,9 @@ class PhaseService {
       description: description || "",
       orderIndex,
       status,
-      startDate: startDate || new Date().toISOString(),
+      startDate: startDate
+        ? convertISOStringToLocalTime(startDate)
+        : dayjs().format(ELocalTimeFormat.DATE_TIME_WITH_MS),
     })
     if (!data) throw new Error("No phase created")
     const phaseData = data.data

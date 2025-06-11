@@ -68,7 +68,9 @@ const DeletePhaseAction = ({ phaseId }: TDeletePhaseActionProps) => {
         anchorEl={anchorEle}
         open={!!anchorEle}
         onClose={() => handleOpen()}
-        TransitionComponent={Fade}
+        slots={{
+          transition: Fade,
+        }}
         anchorOrigin={{
           vertical: "bottom",
           horizontal: "center",
@@ -182,7 +184,9 @@ const MovePhase = ({ phaseData, onMoveSucceeds }: TMovePhaseProps) => {
       </li>
 
       <StyledDialog
-        TransitionComponent={Fade}
+        slots={{
+          transition: Fade,
+        }}
         open={open}
         onClose={() => setOpen(false)}
         scroll="body"
@@ -297,7 +301,9 @@ export const PhaseMenu = ({ phaseData }: TPhaseActionsProps) => {
         anchorEl={anchorEle}
         open={!!anchorEle}
         onClose={() => handleOpen()}
-        TransitionComponent={Fade}
+        slots={{
+          transition: Fade,
+        }}
         anchorOrigin={{
           vertical: "top",
           horizontal: "right",

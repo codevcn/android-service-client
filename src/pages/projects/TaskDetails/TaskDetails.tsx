@@ -139,6 +139,7 @@ export const TaskDetails = () => {
   const [searchParams] = useSearchParams()
   const locationState = useLocation().state
   const firstJumpRef = useRef<boolean>(true)
+  const userInProject = useUserInProject()!
 
   const getTaskDetailsHandler = (taskId: number, phaseId: number) => {
     taskService
@@ -213,7 +214,9 @@ export const TaskDetails = () => {
 
   return (
     <StyledDialog
-      TransitionComponent={Fade}
+      slots={{
+        transition: Fade,
+      }}
       open={open}
       onClose={closeModal}
       scroll="body"
@@ -230,7 +233,9 @@ export const TaskDetails = () => {
               taskData={taskData}
               taskIsComplete={taskData.status === "complete"}
             />
-            <MoveTask taskData={taskData} phaseId={phaseData.id} />
+            {checkUserPermission(userInProject.projectRole, "move-task") && (
+              <MoveTask taskData={taskData} phaseId={phaseData.id} />
+            )}
             <div className="flex justify-between gap-x-3 mt-6">
               <section className="w-full">
                 <div className="flex gap-5">
@@ -239,14 +244,19 @@ export const TaskDetails = () => {
                     taskId={taskData.id}
                     projectId={project.id}
                   />
-                  {/* <TaskDueDate dueDate={taskData.dueDate} /> */}
+                  {checkUserPermission(userInProject.projectRole, "assign-task-due-date") &&
+                    taskData.status === "uncomplete" && <TaskDueDate dueDate={taskData.dueDate} />}
                 </div>
                 <Description
                   description={taskData.description}
                   taskId={taskData.id}
                   phaseId={phaseData.id}
                 />
-                <Comments comments={taskData.comments} taskId={taskData.id} />
+                <Comments
+                  comments={taskData.comments}
+                  taskId={taskData.id}
+                  taskIsComplete={taskData.status === "complete"}
+                />
               </section>
               <Actions taskData={taskData} phaseData={phaseData} projectId={project.id} />
             </div>

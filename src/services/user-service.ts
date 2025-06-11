@@ -2,8 +2,13 @@ import { convertUserApiData, convertToApiGender } from "../utils/api-converters/
 import { EGenders } from "../utils/enums"
 import type { TSuccess } from "../utils/types"
 import { apiUploadUserAvatar } from "./apis/file-apis"
-import { apiSearchUsers, apiUpdateUserPassword, apiUpdateUserProfile } from "./apis/user-apis"
-import type { TSearchUserData, TUploadImageData, TUserProfileData } from "./types"
+import {
+  apiGetUser,
+  apiSearchUsers,
+  apiUpdateUserPassword,
+  apiUpdateUserProfile,
+} from "./apis/user-apis"
+import type { TSearchUserData, TUploadImageData, TUserData, TUserProfileData } from "./types"
 import { createImageUrlEndpoint } from "../utils/helpers"
 
 class UserService {
@@ -11,6 +16,11 @@ class UserService {
     const { data } = await apiSearchUsers(keyword)
     const users = data?.data
     return users?.map((user) => convertUserApiData(user)) || []
+  }
+
+  async getUser(userId: number): Promise<TUserData> {
+    const { data } = await apiGetUser(userId)
+    return convertUserApiData(data.data)
   }
 
   async updateProfile(profilePayload: Partial<TUserProfileData>): Promise<TSuccess> {

@@ -42,11 +42,17 @@ export const JoinedProjects = () => {
         <SpaceDashboard fontSize="small" />
         <h2 className="text-lg font-semibold">Joined Projects</h2>
       </a>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {joinedProjects.map((project) => (
-          <ProjectPreview key={project.id} projectPreviewData={project} />
-        ))}
-      </div>
+      {joinedProjects && joinedProjects.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {joinedProjects.map((project) => (
+            <ProjectPreview key={project.id} projectPreviewData={project} />
+          ))}
+        </div>
+      ) : (
+        <div className="flex items-center justify-center w-full">
+          <p className="text-gray-500 text-base">No joined projects</p>
+        </div>
+      )}
     </section>
   )
 }

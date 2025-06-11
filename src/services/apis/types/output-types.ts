@@ -92,6 +92,7 @@ export type TComment = {
   userId: number
   userRole: EApiProjectMemberRoles
   taskId: number
+  isTaskResult: boolean
 }
 
 // File types
@@ -211,8 +212,8 @@ export type TMessageResponse = TApiResponse<TLibResponse<string>>
 export type TProjectMemberResponse = TApiResponse<TLibResponse<TProjectMember>>
 export type TProjectMembersResponse = TApiResponse<TLibResponse<TProjectMember[]>>
 export type TMsgApiResponse = TApiResponse<TLibResponse<TMessageResponse>>
-export type TTaskMemberResponse = TApiResponse<TLibResponse<TTaskMember[]>>
 export type TStatisticsResponse = TApiResponse<TLibResponse<TStatistics>>
 export type TCountUnreadNotificationsResponse = TApiResponse<
   TLibResponse<TCountUnreadNotifications>
 >
+export type TTaskMembersResponse = TApiResponse<TLibResponse<TTaskMember[]>>

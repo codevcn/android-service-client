@@ -112,7 +112,11 @@ export const Phase = ({ phaseData, className, projectId }: TPhaseProps) => {
           </div>
           <PhaseMenu phaseData={phaseData} />
         </div>
-        <TaskPreviews phaseData={phaseData} taskPreviews={taskPreviews || []} />
+        <TaskPreviews
+          phaseData={phaseData}
+          taskPreviews={taskPreviews || []}
+          userInProject={userInProject}
+        />
       </div>
     </div>
   )

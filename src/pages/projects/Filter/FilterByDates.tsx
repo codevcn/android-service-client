@@ -56,7 +56,7 @@ export const FilterByDueDate = ({ onFilter }: TFilterByDueDateProps) => {
                   </div>
                }
             />
-            <FormControlLabel
+            {/* <FormControlLabel
                value={EPickDateValues.DUE_IN_NEXT_DAY}
                control={<StyledRadio size="small" />}
                label={
@@ -87,7 +87,7 @@ export const FilterByDueDate = ({ onFilter }: TFilterByDueDateProps) => {
                      <span>Due in the next month</span>
                   </div>
                }
-            />
+            /> */}
          </RadioGroup>
       </div>
    )

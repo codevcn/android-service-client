@@ -63,18 +63,18 @@ const filterByDueDate = (
       const taskDueDate = task.dueDate
       if (taskDueDate) {
          const now = dayjs()
-         const targetDate = dayjs(taskDueDate)
+         const dueDate = dayjs(taskDueDate)
          switch (filterData) {
             case EPickDateValues.NO_DUE_DATES:
                return false
             case EPickDateValues.OVERDUE:
-               return targetDate.isBefore(now)
-            case EPickDateValues.DUE_IN_NEXT_DAY:
-               return targetDate.isSame(now.add(1, "day"), "day")
-            case EPickDateValues.DUE_IN_NEXT_WEEK:
-               return targetDate.isSame(now.add(1, "week"), "isoWeek")
-            case EPickDateValues.DUE_IN_NEXT_MONTH:
-               return targetDate.isSame(now.add(1, "month"), "month")
+               return dueDate.isBefore(now) // Sửa lại isAfter thành isBefore vì overdue là quá hạn
+            // case EPickDateValues.DUE_IN_NEXT_DAY:
+            //    return dueDate.isBetween(now, now.add(1, "day"), "day", "[)") // Sửa lại để kiểm tra trong khoảng 1 ngày tới
+            // case EPickDateValues.DUE_IN_NEXT_WEEK:  
+            //    return dueDate.isBetween(now, now.add(1, "week"), "day", "[)") // Sửa lại để kiểm tra trong khoảng 1 tuần tới
+            // case EPickDateValues.DUE_IN_NEXT_MONTH:
+            //    return dueDate.isBetween(now, now.add(1, "month"), "day", "[)") // Sửa lại để kiểm tra trong khoảng 1 tháng tới
          }
       } else if (filterData === EPickDateValues.NO_DUE_DATES) {
          return true

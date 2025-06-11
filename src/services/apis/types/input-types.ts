@@ -54,7 +54,10 @@ export type TTaskInput = {
 }
 
 // Comment types
-export type TCommentInput = string // Content of the comment
+export type TCommentInput = {
+  content: string
+  isTaskResult: boolean
+}
 
 // File types
 export type TFileUploadInput = {

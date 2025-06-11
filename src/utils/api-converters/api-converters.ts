@@ -1,4 +1,8 @@
-import { EApiProjectMemberRoles, EApiGender } from "../../services/apis/types/output-enums"
+import {
+  EApiProjectMemberRoles,
+  EApiGender,
+  EApiUserRoles,
+} from "../../services/apis/types/output-enums"
 import type { TTaskStatus } from "../types"
 import type { TApiTaskStatus } from "../../services/apis/types/sharings"
 import { EGenders, EProjectRoles, EUserRoles } from "../../utils/enums"
@@ -7,7 +11,7 @@ import type { TUser } from "../../services/apis/types/output-types"
 
 export const convertUndefinedFieldsToNull = <T extends Record<string | number, any>>(
   object: T,
-): any => {
+): T => {
   const result: any = {}
   for (const key in object) {
     if (!object[key]) {
@@ -91,5 +95,14 @@ export const convertToApiGender = (gender: EGenders): EApiGender => {
       return EApiGender.Female
     default:
       return EApiGender.Other
+  }
+}
+
+export const convertToUserRoles = (role: EApiUserRoles): EUserRoles => {
+  switch (role) {
+    case EApiUserRoles.User:
+      return EUserRoles.USER
+    default:
+      return EUserRoles.USER
   }
 }

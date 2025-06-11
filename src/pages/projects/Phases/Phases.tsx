@@ -18,7 +18,7 @@ import type { TPhaseData, TProjectMemberData } from "../../../services/types"
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz"
 import { styled, TextField, Tooltip } from "@mui/material"
 import { useDragScroll } from "../../../hooks/drag-scroll"
-import { TaskPreviews } from "./TaskPreviews"
+import { FixedTaskPreviews } from "./TaskPreviews"
 import AddIcon from "@mui/icons-material/Add"
 import CloseIcon from "@mui/icons-material/Close"
 import { Phase } from "./Phase"
@@ -132,9 +132,10 @@ const DragScrollPlaceholder = ({ refToDrag, dndItemsCount }: TDragScrollPlacehol
 
 type TDragOverlayItemProps = {
   phaseData: TPhaseData
+  userInProject: TProjectMemberData
 }
 
-const DragOverlayItem = ({ phaseData }: TDragOverlayItemProps) => {
+const DragOverlayItem = ({ phaseData, userInProject }: TDragOverlayItemProps) => {
   const { taskPreviews, title } = phaseData
 
   return (
@@ -150,7 +151,11 @@ const DragOverlayItem = ({ phaseData }: TDragOverlayItemProps) => {
             </button>
           </Tooltip>
         </div>
-        <TaskPreviews phaseData={phaseData} taskPreviews={taskPreviews || []} />
+        <FixedTaskPreviews
+          phaseData={phaseData}
+          taskPreviews={taskPreviews || []}
+          userInProject={userInProject}
+        />
       </div>
     </div>
   )
@@ -254,7 +259,12 @@ const PhasesCanDragAndDrop = ({
             </div>
           </SortableContext>
           <DragOverlay>
-            {draggingId ? <DragOverlayItem phaseData={findPhaseById(phases, draggingId)} /> : null}
+            {draggingId ? (
+              <DragOverlayItem
+                phaseData={findPhaseById(phases, draggingId)}
+                userInProject={userInProject}
+              />
+            ) : null}
           </DragOverlay>
         </DndContext>
         <ProjectRoleGuard userProjectRole={userInProject.projectRole} permissions={["CRUD-phase"]}>

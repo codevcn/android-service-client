@@ -15,6 +15,9 @@ import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew"
 import { ProjectBackground } from "./ProjectBackground"
 import { useUserInProject } from "../../../hooks/user"
 import DeleteIcon from "@mui/icons-material/Delete"
+import dayjs from "dayjs"
+import { checkUserPermission } from "../../../configs/user-permissions"
+import { ProjectDates } from "./ProjectDates"
 
 type TTitleSectionProps = {
   onCloseMenu: () => void
@@ -158,7 +161,7 @@ const LeaveDeleteProject = () => {
             onClick={handleLeaveDeleteProject}
             className="text-sm mt-2 bg-delete-btn-bgcl rounded-md p-1 w-full text-black font-bold hover:bg-delete-btn-hover-bgcl"
           >
-            Delete project
+            {isProjectOwner ? "Delete project" : "Leave project"}
           </button>
         </div>
       </StyledPopover>
@@ -168,6 +171,8 @@ const LeaveDeleteProject = () => {
 
 export const ProjectMenu = () => {
   const [open, setOpen] = useState<boolean>(false)
+  const projectData = useAppSelector(({ project }) => project.project!)
+  const userInProject = useUserInProject()!
 
   useEffect(() => {
     eventEmitter.on(EInternalEvents.OPEN_PROJECT_MENU, (isOpen) => {
@@ -185,12 +190,18 @@ export const ProjectMenu = () => {
           <TitleSection onCloseMenu={() => setOpen(false)} />
           <hr className="my-2" />
           <div className="css-styled-vt-scrollbar overflow-y-auto overflow-x-hidden text-modal-text-cl text-sm px-3 grow relative">
-            {/* <AboutProject projectData={projectData} />
-            <ProjectBackground
+            {checkUserPermission(userInProject.projectRole, "assign-project-due-date") && (
+              <>
+                <ProjectDates />
+                <hr className="my-2" />
+              </>
+            )}
+            <AboutProject projectData={projectData} />
+            {/* <ProjectBackground
               projectBackground={projectData.background}
               projectId={projectData.id}
-            />
-            <hr className="my-2" /> */}
+            /> */}
+            <hr className="my-2" />
             <LeaveDeleteProject />
           </div>
         </section>

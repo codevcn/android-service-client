@@ -1,18 +1,21 @@
 import InfoIcon from "@mui/icons-material/Info"
 import AccountCircleIcon from "@mui/icons-material/AccountCircle"
 import type { TProjectData, TProjectMemberData, TUserData } from "../../../services/types"
-import { Avatar, AvatarGroup, styled, Tooltip } from "@mui/material"
+import { Avatar, AvatarGroup, styled, TextField, Tooltip } from "@mui/material"
 import { TProjectMenuActive, useProjectMenuContext } from "./sharing"
 import ReorderIcon from "@mui/icons-material/Reorder"
 import { EProjectRoles } from "../../../utils/enums"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { EInternalEvents, eventEmitter } from "../../../utils/events"
-import { Editor as TinyMCEEditor } from "tinymce"
 import { useAppDispatch } from "../../../hooks/redux"
 import { updateProject } from "../../../redux/project/project-slice"
 import { CustomRichTextContent } from "../../../components/RichTextContent"
 import SubtitlesIcon from "@mui/icons-material/Subtitles"
 import { ProjectMenuSlider } from "./ProjectMenuSlider"
+import { projectService } from "../../../services/project-service"
+import { LogoLoading } from "../../../components/Loadings"
+import { checkUserPermission } from "../../../configs/user-permissions"
+import { useUserInProject } from "../../../hooks/user"
 
 type TProjectAdminsProps = {
   projectMembers: TProjectMemberData[]
@@ -33,7 +36,7 @@ const ProjectAdmins = ({ projectMembers }: TProjectAdminsProps) => {
     <>
       <div className="flex items-center gap-3 mt-5">
         <AccountCircleIcon />
-        <h2 className="font-bold text-base">Project Admins</h2>
+        <h2 className="font-bold text-base">Project Admin</h2>
       </div>
       <div className="mt-2 pl-1">
         {filteredAdmins.length > 1 ? (
@@ -85,23 +88,40 @@ const ProjectAdmins = ({ projectMembers }: TProjectAdminsProps) => {
 }
 
 type TProjectDescriptionProps = {
-  projectDescription: string | null
+  projectData: TProjectData
   menuIsActive: boolean
 }
 
-const ProjectDescription = ({ projectDescription, menuIsActive }: TProjectDescriptionProps) => {
-  const editorRef = useRef<TinyMCEEditor | null>(null)
+const ProjectDescription = ({ projectData, menuIsActive }: TProjectDescriptionProps) => {
+  const { description, id } = projectData
+  const textfieldRef = useRef<HTMLInputElement | null>(null)
   const [openEditor, setOpenEditor] = useState<boolean>(menuIsActive)
   const dispatch = useAppDispatch()
+  const [loading, setLoading] = useState<boolean>(false)
+  const userInProject = useUserInProject()!
 
   const saveProjectDescription = () => {
-    const editor = editorRef.current
-    if (editor) {
-      const content = editor.getContent()
+    const textfield = textfieldRef.current
+    if (textfield) {
+      const content = textfield.value
       if (content && content.length > 0) {
-        dispatch(updateProject({ description: content }))
-        setOpenEditor(false)
+        setLoading(true)
+        projectService
+          .updateProject(id, { description: content })
+          .then(() => {
+            dispatch(updateProject({ description: content }))
+            setOpenEditor(false)
+          })
+          .finally(() => {
+            setLoading(false)
+          })
       }
+    }
+  }
+
+  const handleOpenEditor = (isOpen: boolean) => {
+    if (checkUserPermission(userInProject.projectRole, "CRUD-project")) {
+      setOpenEditor(isOpen)
     }
   }
 
@@ -118,30 +138,45 @@ const ProjectDescription = ({ projectDescription, menuIsActive }: TProjectDescri
         <h2 className="font-bold text-base">Project Description</h2>
       </div>
 
-      <div hidden={true} className="mt-2">
-        {/* Rich text editor has been removed */}
+      <div hidden={!openEditor} className="mt-2">
+        <div>
+          <DescriptionEditor
+            fullWidth
+            placeholder="Enter a description here..."
+            multiline
+            defaultValue={description}
+            minRows={3}
+            inputRef={textfieldRef}
+          />
+        </div>
         <div className="flex gap-x-3 mt-2">
-          <button
-            onClick={saveProjectDescription}
-            className="bg-confirm-btn-bgcl font-bold rounded hover:bg-outline-cl text-black text-sm py-2 px-3"
-          >
-            Save
-          </button>
-          <button
-            onClick={() => setOpenEditor(false)}
-            className="hover:bg-modal-btn-hover-bgcl text-regular-text-cl text-sm font-semibold py-2 px-3 rounded"
-          >
-            Cancel
-          </button>
+          {loading ? (
+            <LogoLoading size="small" />
+          ) : (
+            <>
+              <button
+                onClick={saveProjectDescription}
+                className="bg-confirm-btn-bgcl font-bold rounded hover:bg-outline-cl text-black text-sm py-2 px-3"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => handleOpenEditor(false)}
+                className="hover:bg-modal-btn-hover-bgcl text-regular-text-cl text-sm font-semibold py-2 px-3 rounded"
+              >
+                Cancel
+              </button>
+            </>
+          )}
         </div>
       </div>
       <div
         className="mt-2 py-2 px-3 rounded bg-modal-btn-bgcl hover:bg-modal-btn-hover-bgcl cursor-pointer"
         hidden={openEditor}
-        onClick={() => setOpenEditor(true)}
+        onClick={() => handleOpenEditor(true)}
       >
-        {projectDescription && projectDescription.length > 0 ? (
-          <CustomRichTextContent content={projectDescription} />
+        {description && description.length > 0 ? (
+          <CustomRichTextContent content={description} />
         ) : (
           <span>
             Add a description to let your teammates know what this board is used for. You'll get
@@ -194,10 +229,7 @@ export const AboutProject = ({ projectData }: TAboutProjectProps) => {
             </div>
           </div>
           <ProjectAdmins projectMembers={projectData.members} />
-          <ProjectDescription
-            projectDescription={projectData.description}
-            menuIsActive={isActive}
-          />
+          <ProjectDescription projectData={projectData} menuIsActive={isActive} />
         </>
       </ProjectMenuSlider>
     </>
@@ -216,6 +248,26 @@ const StyledAvatarGroup = styled(AvatarGroup)({
       border: "none",
       "&:hover": {
         outline: "2px solid white",
+      },
+    },
+  },
+})
+
+const DescriptionEditor = styled(TextField)({
+  "& .MuiInputBase-formControl": {
+    width: "100%",
+    padding: "5px 8px",
+    backgroundColor: "var(--ht-focused-textfield-bgcl)",
+    "& .MuiInputBase-input": {
+      width: "100%",
+      color: "var(--ht-regular-text-cl)",
+      fontSize: "1rem",
+      lineHeight: "1.25rem",
+      whiteSpace: "pre",
+    },
+    "&.Mui-focused": {
+      "& .MuiOutlinedInput-notchedOutline": {
+        borderColor: "var(--ht-outline-cl)",
       },
     },
   },

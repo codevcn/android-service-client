@@ -298,9 +298,6 @@ export const ShareProject = ({ projectData }: TShareProjectProps) => {
       </Tooltip>
 
       <StyledDialog
-        slotProps={{
-          transition: { timeout: 400 }
-        }}
         open={openDialog}
         onClose={() => setOpenDialog(false)}
         scroll="body"

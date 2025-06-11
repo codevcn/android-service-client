@@ -1,77 +1,98 @@
 import {
   convertToApiTaskStatus,
-  convertToTaskStatus,
-  convertUndefinedFieldsToNull,
+  convertToGender,
+  convertToUserRoles,
   convertToProjectRoles,
+  convertToTaskStatus,
 } from "../utils/api-converters/api-converters"
 import type {
   TTaskFileData,
   TTaskData,
   TUploadedFileData,
   TTaskPreviewData,
-  TCommentData,
+  TTaskMemberData,
 } from "./types"
 import type { TSuccess, TTaskStatus } from "../utils/types"
 import {
   apiCreateTask,
   apiDeleteTask,
   apiGetTask,
+  apiGetTaskMembers,
+  apiGetTasksByPhase,
+  apiMarkTaskAsComplete,
   apiMoveTask,
   apiUpdateTask,
 } from "./apis/task-apis"
-import { apiGetCommentsByTask } from "./apis/comment-apis"
-import { apiGetUser } from "./apis/user-apis"
 import { apiUploadTaskFile, apiGetFileDetails, apiDownloadTaskFile } from "./apis/file-apis"
 import type { TTaskInput } from "./apis/types/input-types"
 import { apiAddMemberToATask, apiRemoveMemberFromATask } from "./apis/member-apis"
-import { convertUserApiData } from "../utils/api-converters/api-converters"
 import { TDownloadFileResponse } from "./apis/types/output-types"
-import { createImageUrlEndpoint } from "../utils/helpers"
+import {
+  convertISOStringToLocalTime,
+  convertLocalTimeToISOString,
+  createImageUrlEndpoint,
+} from "../utils/helpers"
+import { commentService } from "./comment-service"
+import { EGenders } from "../utils/enums"
 
 class TaskService {
   async getTaskDetails(taskId: number): Promise<TTaskData> {
-    const [taskResponse, commentsResponse] = await Promise.all([
-      apiGetTask({ id: taskId }),
-      apiGetCommentsByTask(taskId),
-    ])
     const {
       data: { data: taskData },
-    } = taskResponse
-    const {
-      data: { data: commentsData },
-    } = commentsResponse
+    } = await apiGetTask({ id: taskId })
     if (!taskData) throw new Error("Task not found")
-    const comments = await Promise.all(
-      commentsData?.map(async (comment): Promise<TCommentData> => {
-        const {
-          data: { data: userData },
-        } = await apiGetUser(comment.userId)
-        if (!userData) throw new Error("User not found")
-        return {
-          id: comment.id,
-          content: comment.content,
-          createdAt: comment.createdAt,
-          user: {
-            ...convertUserApiData(userData),
-            projectRole: convertToProjectRoles(comment.userRole),
-          },
-          isTaskResult: false,
-        }
-      }) || [],
-    )
-    const fetchedTaskMember = taskData.assignedToId ? await apiGetUser(taskData.assignedToId) : null
-    const userAsMember = fetchedTaskMember
-      ? convertUndefinedFieldsToNull(fetchedTaskMember.data.data)
-      : null
+    const comments = await commentService.getCommentsByTask(taskId)
+    const members = await this.getTaskMembers(taskData.id)
     return {
       comments,
       status: convertToTaskStatus(taskData.status),
       description: taskData.description,
-      dueDate: taskData.dueDate || null,
+      dueDate: taskData.dueDate ? convertLocalTimeToISOString(taskData.dueDate) : null,
       id: taskData.id,
-      members: userAsMember ? [{ ...userAsMember, fullName: userAsMember.fullname }] : [],
+      members,
       title: taskData.taskName,
     }
+  }
+
+  async getTasksByPhase(phaseId: number): Promise<TTaskPreviewData[]> {
+    const {
+      data: { data: tasks },
+    } = await apiGetTasksByPhase(phaseId)
+    if (!tasks) throw new Error("No tasks found")
+    return await Promise.all(
+      tasks.map(async (task): Promise<TTaskPreviewData> => {
+        return {
+          dueDate: task.dueDate ? convertLocalTimeToISOString(task.dueDate) : null,
+          hasDescription: !!task.description,
+          id: task.id,
+          position: task.orderIndex,
+          status: convertToTaskStatus(task.status),
+          taskMembers: await this.getTaskMembers(task.id),
+          title: task.taskName,
+        }
+      }),
+    )
+  }
+
+  async getTaskMembers(taskId: number): Promise<TTaskMemberData[]> {
+    const {
+      data: { data: taskMembers },
+    } = await apiGetTaskMembers(taskId)
+    if (!taskMembers) throw new Error("No task members found")
+    return taskMembers.map<TTaskMemberData>((member) => ({
+      id: member.id,
+      username: member.username,
+      email: member.email,
+      avatar: member.avatar || null,
+      role: convertToUserRoles(member.role),
+      emailVerified: member.emailVerified || false,
+      projectRole: convertToProjectRoles(member.projectRole),
+      fullName: member.fullname,
+      bio: member.bio || null,
+      birthday: member.birthday || null,
+      gender: member.gender ? convertToGender(member.gender) : EGenders.OTHERS,
+      socialLinks: member.socialLinks || null,
+    }))
   }
 
   async uploadTaskFile(file: File, taskId: number, userId: number): Promise<TUploadedFileData> {
@@ -98,16 +119,12 @@ class TaskService {
       id: fileData.id.toString(),
       fileName: fileData.fileName,
       fileSize: fileData.fileSize.toString(),
-      uploadedAt: fileData.createdAt,
+      uploadedAt: convertLocalTimeToISOString(fileData.createdAt),
     }
   }
 
-  async handleMarkTaskComplete(
-    taskId: number,
-    newStatus: TTaskStatus,
-    projectId: number,
-  ): Promise<void> {
-    await apiUpdateTask({ id: taskId }, { status: convertToApiTaskStatus(newStatus) }, projectId)
+  async handleMarkTaskComplete(taskId: number, newStatus: TTaskStatus): Promise<void> {
+    await apiMarkTaskAsComplete(taskId, convertToApiTaskStatus(newStatus))
   }
 
   async deleteTask(taskId: number, projectId: number): Promise<TSuccess> {
@@ -120,7 +137,15 @@ class TaskService {
     taskData: Partial<TTaskInput>,
     projectId: number,
   ): Promise<TSuccess> {
-    await apiUpdateTask({ id: taskId }, taskData, projectId)
+    const { dueDate, ...rest } = taskData
+    await apiUpdateTask(
+      { id: taskId },
+      {
+        ...rest,
+        dueDate: dueDate ? convertISOStringToLocalTime(dueDate) : undefined,
+      },
+      projectId,
+    )
     return {
       success: true,
     }
@@ -140,12 +165,10 @@ class TaskService {
       id: task.id,
       title: task.taskName,
       hasDescription: !!task.description,
-      taskMembers: task.assignedToId
-        ? [convertUndefinedFieldsToNull(await apiGetUser(task.assignedToId))]
-        : [],
+      taskMembers: await this.getTaskMembers(task.id),
       position: task.orderIndex,
       status: task.status as TTaskStatus,
-      dueDate: task.dueDate || null,
+      dueDate: task.dueDate ? convertLocalTimeToISOString(task.dueDate) : null,
     }
   }
 
@@ -155,12 +178,13 @@ class TaskService {
     taskData: Partial<TTaskData>,
     projectId: number,
   ): Promise<TSuccess> {
+    const { dueDate } = taskData
     await apiUpdateTask(
       { id: taskId },
       {
         taskName: taskData.title,
         description: taskData.description || "",
-        dueDate: taskData.dueDate || undefined,
+        dueDate: dueDate ? convertISOStringToLocalTime(dueDate) : undefined,
         orderIndex: 0,
         phase: {
           id: phaseId,

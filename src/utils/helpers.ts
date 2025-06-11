@@ -1,7 +1,7 @@
 import dayjs from "dayjs"
 import { EInternalEvents, eventEmitter } from "./events"
 import type { SnackbarOrigin } from "@mui/material"
-import { EProjectRoles } from "./enums"
+import { ELocalTimeFormat, EProjectRoles } from "./enums"
 import type { Area } from "react-easy-crop"
 import DOMPurify from "dompurify"
 
@@ -168,4 +168,12 @@ export const createImageUrlEndpoint = (filename: string): string => {
 
 export const getCssVar = (varName: string) => {
   return getComputedStyle(document.documentElement).getPropertyValue(varName).trim()
+}
+
+export const convertISOStringToLocalTime = (isoString: string): string => {
+  return dayjs(isoString).format(ELocalTimeFormat.DATE_TIME_WITH_MS)
+}
+
+export const convertLocalTimeToISOString = (localDateTime: string): string => {
+  return dayjs(localDateTime).toISOString()
 }

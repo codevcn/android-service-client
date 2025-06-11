@@ -5,8 +5,16 @@ import { addNewTaskMember } from "./project-slice"
 import { taskService } from "../../services/task-service"
 import axiosErrorHandler from "../../utils/axios-error-handler"
 
+type TAddNewTaskMemberActionCallback = () => void
+
 export const addNewTaskMemberAction =
-  (memberData: TTaskMemberData, phaseId: number, taskId: number, projectId: number) =>
+  (
+    memberData: TTaskMemberData,
+    phaseId: number,
+    taskId: number,
+    projectId: number,
+    callback?: TAddNewTaskMemberActionCallback,
+  ) =>
   (dispatch: TAppDispatch, getState: TGetState) => {
     const taskMemberId = memberData.id
     const currentMembers = getState().project.taskData?.members
@@ -23,5 +31,10 @@ export const addNewTaskMemberAction =
       })
       .catch((error) => {
         toast.error(axiosErrorHandler.handleHttpError(error).message)
+      })
+      .finally(() => {
+        if (callback) {
+          callback()
+        }
       })
   }

@@ -7,8 +7,9 @@ const leaderPermissions = [
    "CRUD-task",
    "CRUD-phase",
    "assign-task",
-   "assign-due-date",
+   "assign-task-due-date",
    "arrange-phase-task",
+   "move-task",
 ] as const
 const adminPermissions = [
    ...leaderPermissions,
@@ -16,6 +17,7 @@ const adminPermissions = [
    "CRUD-project",
    "assign-project-role",
    "add-remove-project-member",
+   "assign-project-due-date",
 ] as const
 
 type TMemberPermissions = (typeof memberPermissions)[number]

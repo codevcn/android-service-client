@@ -229,7 +229,9 @@ const Filter = ({ phases }: TFilterTasksProps) => {
         anchorEl={anchorEle}
         open={!!anchorEle}
         onClose={() => handleOpenFilterBoard()}
-        TransitionComponent={Fade}
+        slots={{
+          transition: Fade,
+        }}
         keepMounted
         anchorOrigin={{
           vertical: "bottom",
@@ -259,7 +261,7 @@ const Filter = ({ phases }: TFilterTasksProps) => {
             <FilterByTaskTitle onFilter={searchByTaskTitle} />
             <FilterByMembers onFilter={filterTasks} />
             <FilterByStatus onFilter={filterTasks} />
-            {/* <FilterByDueDate onFilter={filterTasks} /> */}
+            <FilterByDueDate onFilter={filterTasks} />
           </div>
         </div>
       </FilterTasksBoard>

@@ -7,6 +7,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
 import { AppSnackbar } from "./Snackbar"
 import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
 import isoWeek from "dayjs/plugin/isoWeek"
 import { EventSourceContext } from "../lib/event-source-context"
 
@@ -14,6 +15,7 @@ dayjs.extend(isoWeek)
 dayjs().isoWeek()
 dayjs().isoWeekday()
 dayjs().isoWeekYear()
+dayjs.extend(utc)
 
 const nonGuardRoutes: string[] = ["/", "/login", "/register", "/faq"]
 

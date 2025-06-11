@@ -10,6 +10,7 @@ export enum EApiUserRoles {
 
 export enum EApiNotificationTypes {
   PROJECT_INVITATION = "PROJECT_INVITATION",
+  TASK_REMINDER = "TASK_REMINDER",
 }
 
 export enum EApiNotificationAction {

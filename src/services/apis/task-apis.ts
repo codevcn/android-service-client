@@ -5,7 +5,12 @@ import type {
   TTasksResponse,
   TMessageResponse,
   TMsgApiResponse,
+  TTaskMembersResponse,
 } from "./types/output-types"
+import type { TApiTaskStatus } from "./types/sharings"
+
+export const apiGetTaskMembers = async (taskId: number): Promise<TTaskMembersResponse> =>
+  clientAxios.get(`/tasks/${taskId}/members`)
 
 export const apiGetTasksByPhase = async (phaseId: number): Promise<TTasksResponse> =>
   clientAxios.get(`/tasks/phase/${phaseId}`)
@@ -46,3 +51,9 @@ export const apiMoveTask = async (
   projectId: number,
 ): Promise<TMsgApiResponse> =>
   clientAxios.put(`/tasks/${taskId}/move`, {}, { params: { phaseId, position, projectId } })
+
+export const apiMarkTaskAsComplete = async (
+  taskId: number,
+  status: TApiTaskStatus,
+): Promise<TMsgApiResponse> =>
+  clientAxios.put(`/tasks/${taskId}/mark-as-complete`, {}, { params: { status } })

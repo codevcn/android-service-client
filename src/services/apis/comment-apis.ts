@@ -7,20 +7,18 @@ export const apiGetCommentsByTask = async (taskId: number): Promise<TCommentsRes
 
 export const apiCreateComment = async (
   { taskId, userId }: TCommentParams,
-  content: TCommentInput,
-): Promise<TCommentResponse> => clientAxios.post(`/comments/${taskId}/${userId}`, { content })
+  payload: Partial<TCommentInput>,
+): Promise<TCommentResponse> => clientAxios.post(`/comments/${taskId}/${userId}`, payload)
 
 export const apiUpdateComment = async (
   { commentId }: TCommentIdParam,
-  content: TCommentInput,
-): Promise<TCommentResponse> => clientAxios.put(`/comments/${commentId}`, { content })
+  payload: Partial<TCommentInput>,
+): Promise<TCommentResponse> => clientAxios.put(`/comments/${commentId}`, payload)
 
 export const apiDeleteComment = async ({ commentId }: TCommentIdParam): Promise<TMessageResponse> =>
   clientAxios.delete(`/comments/${commentId}`)
 
-// đã bỏ
-// export const apiMarkAsTaskResult = async (
-//   { commentId }: TCommentIdParam,
-//   { isTaskResult }: TMarkAsTaskResultInput,
-// ): Promise<TCommentResponse> =>
-//   clientAxios.put(`/comments/${commentId}/task-result`, { isTaskResult })
+export const apiMarkAsTaskResult = async ({
+  commentId,
+}: TCommentIdParam): Promise<TMessageResponse> =>
+  clientAxios.put(`/comments/${commentId}/mark-as-task-result`)

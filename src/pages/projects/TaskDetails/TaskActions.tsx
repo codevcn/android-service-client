@@ -62,9 +62,9 @@ export const TaskActions = ({ phaseData, taskData }: TTaskActionsProps) => {
     setLoading("mark-as-complete")
     const newStatus: TTaskStatus = isComplete ? "uncomplete" : "complete"
     taskService
-      .handleMarkTaskComplete(taskId, newStatus, project.id)
+      .handleMarkTaskComplete(taskId, newStatus)
       .then(() => {
-        toast.success("Task is marked as complete")
+        toast.success(`Task is marked as ${newStatus}`)
         dispatch(updateTaskData({ status: newStatus }))
         dispatch(updateTaskPreview({ ...taskData, status: newStatus, phaseId }))
       })

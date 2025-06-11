@@ -13,6 +13,7 @@ import type {
   TNotificationData,
   TCountUnreadNotificationsData,
 } from "./types"
+import { convertLocalTimeToISOString } from "../utils/helpers"
 
 type TUpdateNotificationPayload = { id: TNotificationData["id"] } & Partial<
   Omit<TNotificationData, "id">
@@ -26,7 +27,7 @@ class NotificationService {
       notifications: data.data?.map((notification) => ({
         id: notification.notificationId,
         description: notification.message,
-        timestamp: notification.createdAt,
+        timestamp: convertLocalTimeToISOString(notification.createdAt),
         seen: notification.read,
         type: notification.type,
         action: notification.action,

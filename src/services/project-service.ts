@@ -33,6 +33,9 @@ import { projectBackgrounds, staticStarredValue } from "../lib/project-static-da
 import { apiGetUser } from "./apis/user-apis"
 import { convertUserApiData } from "../utils/api-converters/api-converters"
 import { EProjectRoles } from "../utils/enums"
+import { convertISOStringToLocalTime, convertLocalTimeToISOString } from "../utils/helpers"
+import dayjs from "dayjs"
+import { ELocalTimeFormat } from "../utils/enums"
 
 class ProjectService {
   async getUserInfoInProject(userId: number, projectId: number): Promise<TUserInProjectData> {
@@ -56,7 +59,7 @@ class ProjectService {
       id: project.id,
       background: projectBackgrounds[0],
       starred: staticStarredValue,
-      createdAt: project.createdAt,
+      createdAt: convertLocalTimeToISOString(project.createdAt),
     }))
   }
 
@@ -76,6 +79,8 @@ class ProjectService {
       background: projectBackgrounds[0],
       starred: staticStarredValue,
       ownerId: projectData.ownerId,
+      startDate: projectData.startDate ? convertLocalTimeToISOString(projectData.startDate) : null,
+      endDate: projectData.endDate ? convertLocalTimeToISOString(projectData.endDate) : null,
     }
   }
 
@@ -132,19 +137,21 @@ class ProjectService {
     await apiCreateProject({
       projectName: projectTitle,
       description: "",
-      startDate: new Date().toISOString(),
+      startDate: dayjs().format(ELocalTimeFormat.DATE_TIME_WITH_MS),
       status: "ACTIVE",
-      endDate: new Date().toISOString(),
+      endDate: dayjs().format(ELocalTimeFormat.DATE_TIME_WITH_MS),
     })
     return { success: true }
   }
 
   async updateProject(projectId: number, projectData: Partial<TProjectData>): Promise<TSuccess> {
+    const { title, description, endDate } = projectData
     await apiUpdateProject(
       { projectId },
       {
-        projectName: projectData.title,
-        description: projectData.description || "",
+        projectName: title,
+        description: description || "",
+        endDate: endDate ? convertISOStringToLocalTime(endDate) : undefined,
       },
     )
     return { success: true }
@@ -198,7 +205,7 @@ class ProjectService {
       id: project.id,
       background: projectBackgrounds[0],
       starred: staticStarredValue,
-      createdAt: project.createdAt,
+      createdAt: convertLocalTimeToISOString(project.createdAt),
     }))
   }
 

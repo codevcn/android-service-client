@@ -27,7 +27,11 @@ import {
   updateSingleNotification,
 } from "../redux/notification/notification-slice"
 import dayjs from "dayjs"
-import { openFixedLoadingHandler, sanitizeHTMLString } from "../utils/helpers"
+import {
+  convertLocalTimeToISOString,
+  openFixedLoadingHandler,
+  sanitizeHTMLString,
+} from "../utils/helpers"
 import DoneAllIcon from "@mui/icons-material/DoneAll"
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank"
 import { ESSEEvents } from "../utils/enums"
@@ -36,6 +40,7 @@ import { EApiNotificationAction, EApiNotificationTypes } from "../services/apis/
 import { projectService } from "../services/project-service"
 import { EventSourceContext } from "../lib/event-source-context"
 import { EInternalEvents, eventEmitter } from "../utils/events"
+
 type TNotificationItemProps = {
   notificationData: TNotificationData
   onMarkAsRead: (notificationId: number, seen: boolean) => void
@@ -85,7 +90,7 @@ const NotificationItem = ({
 
   return (
     <div className="bg-modal-btn-bgcl rounded-lg relative text-sm">
-      <div className="flex justify-between py-1 px-2 h-6 bg-black rounded-tr-md rounded-tl-md relative">
+      <div className="py-1 px-2 h-6 bg-black rounded-tr-md rounded-tl-md relative">
         <div className="flex absolute top-1/2 right-2 -translate-y-1/2 z-20">
           {loadingId?.includes(id) ? (
             <LogoLoading size="small" />
@@ -106,13 +111,13 @@ const NotificationItem = ({
           )}
         </div>
         {action === EApiNotificationAction.ACCEPT && (
-          <div className="flex absolute top-1/2 right-2 -translate-y-1/2 z-20 items-center gap-1 text-success-text-cl">
+          <div className="flex absolute top-1/2 left-2 -translate-y-1/2 z-20 items-center gap-1 text-success-text-cl">
             <DoneAllIcon sx={{ height: 16, width: 16 }} color="inherit" />
             <span className="text-xs">Invitation accepted</span>
           </div>
         )}
         {action === EApiNotificationAction.REJECT && (
-          <div className="flex absolute top-1/2 right-2 -translate-y-1/2 z-20 items-center gap-1 text-delete-btn-bgcl">
+          <div className="flex absolute top-1/2 left-2 -translate-y-1/2 z-20 items-center gap-1 text-delete-btn-bgcl">
             <CloseIcon sx={{ height: 16, width: 16 }} color="inherit" />
             <span className="text-xs">Invitation rejected</span>
           </div>
@@ -371,7 +376,7 @@ const NotificationButton = ({ onOpenNotificationsList }: TNotificationButtonProp
   const { unreadCount } = useAppSelector(({ notification }) => notification)
   const dispatch = useAppDispatch()
 
-  const handleCountUnreadNotifications = () => {
+  const countUnreadNotifications = () => {
     notificationService
       .countUnreadNotifcations()
       .then((res) => {
@@ -383,7 +388,9 @@ const NotificationButton = ({ onOpenNotificationsList }: TNotificationButtonProp
   }
 
   useEffect(() => {
-    handleCountUnreadNotifications()
+    if (unreadCount === 0) {
+      countUnreadNotifications()
+    }
   }, [])
 
   return (
@@ -420,14 +427,14 @@ export const Notification = () => {
   }
 
   useEffect(() => {
-    const generalListener = (e: MessageEvent) => {
+    const notificationListener = (e: MessageEvent) => {
       const data = JSON.parse(e.data) as TNotificationEventData
       dispatch(
         addNotifications([
           {
             id: data.notificationId,
             description: data.message,
-            timestamp: data.createdAt,
+            timestamp: convertLocalTimeToISOString(data.createdAt),
             seen: data.read,
             type: data.type,
             action: data.action,
@@ -438,9 +445,13 @@ export const Notification = () => {
       )
       dispatch(adjustUnreadCount(1))
     }
-    eventSource.current?.addEventListener(ESSEEvents.GENERAL, generalListener)
+    eventSource.current?.addEventListener(ESSEEvents.TASK_REMINDER, notificationListener)
+    eventSource.current?.addEventListener(ESSEEvents.PROJECT_REMINDER, notificationListener)
+    eventSource.current?.addEventListener(ESSEEvents.GENERAL, notificationListener)
     return () => {
-      eventSource.current?.removeEventListener(ESSEEvents.GENERAL, generalListener)
+      eventSource.current?.removeEventListener(ESSEEvents.GENERAL, notificationListener)
+      eventSource.current?.removeEventListener(ESSEEvents.TASK_REMINDER, notificationListener)
+      eventSource.current?.removeEventListener(ESSEEvents.PROJECT_REMINDER, notificationListener)
     }
   }, [])
 

@@ -50,7 +50,7 @@ const AddMemberBoard = () => {
   ) => {
     if (checkUserPermission(userInProject.projectRole, "add-remove-task-member")) {
       if (isAdding) {
-        dispatch(addNewTaskMemberAction(member, phaseId, taskId, projectId))
+        dispatch(addNewTaskMemberAction(member, phaseId, taskId, projectId, handleCloseBoard))
       } else {
         taskService
           .removeMemberFromATask(taskId, member.id)
@@ -252,7 +252,7 @@ export const TaskMembers = ({ phaseId, taskId, projectId }: TTaskMembersProps) =
     })
   }
 
-  const isTaskMemberEmpty = useMemo(() => {
+  const noMembers = useMemo(() => {
     return !taskMembers || taskMembers.length === 0
   }, [taskMembers])
 
@@ -261,7 +261,7 @@ export const TaskMembers = ({ phaseId, taskId, projectId }: TTaskMembersProps) =
       <h3 className="text-regular-text-cl font-semibold text-sm">Members</h3>
       <div className="flex items-center gap-x-2 mt-1">
         <CurrentTaskMembers />
-        {isTaskMemberEmpty && checkUserPermission(projectRole, "add-remove-task-member") && (
+        {noMembers && checkUserPermission(projectRole, "add-remove-task-member") && (
           <Tooltip title="Add member">
             <button
               onClick={openAddMemberBoard}
@@ -272,7 +272,7 @@ export const TaskMembers = ({ phaseId, taskId, projectId }: TTaskMembersProps) =
           </Tooltip>
         )}
       </div>
-      {isTaskMemberEmpty && <AddMemberBoard />}
+      <AddMemberBoard />
     </div>
   )
 }

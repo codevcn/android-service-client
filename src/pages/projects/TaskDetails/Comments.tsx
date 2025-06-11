@@ -18,6 +18,7 @@ import CheckIcon from "@mui/icons-material/Check"
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline"
 import { commentService } from "../../../services/comment-service"
 import axiosErrorHandler from "../../../utils/axios-error-handler"
+import { LogoLoading } from "../../../components/Loadings"
 
 type TDeleteCommentProps = {
   commentId: number
@@ -88,13 +89,16 @@ const DeleteComment = ({ commentId, createdAt }: TDeleteCommentProps) => {
   )
 }
 
+type TLoading = "none" | "mark-as-task-result" | "delete"
+
 type TUserCommentProps = {
   commentData: TCommentData
   onFocusEditor: (editorWrapperId: string) => void
   onBlurEditor: (editorWrapperId: string) => void
   loginedUser: TUserData
-  hasCommentAsTaskResult: boolean
+  commentAsTaskResult: TCommentData | undefined
   taskId: number
+  taskIsComplete: boolean
 }
 
 const UserComment = ({
@@ -102,13 +106,15 @@ const UserComment = ({
   onFocusEditor,
   onBlurEditor,
   loginedUser,
-  hasCommentAsTaskResult,
+  commentAsTaskResult,
   taskId,
+  taskIsComplete,
 }: TUserCommentProps) => {
   const { user, content, createdAt, id, isTaskResult } = commentData
   const [openEditor, setOpenEditor] = useState<boolean>(false)
   const editorRef = useRef<TinyMCEEditor | null>(null)
   const dispatch = useAppDispatch()
+  const [loading, setLoading] = useState<TLoading>("none")
 
   const editCommentHandler = () => {
     const editor = editorRef.current
@@ -149,8 +155,26 @@ const UserComment = ({
   }, [])
 
   const handleMarkAsTaskResult = (isTaskResult: boolean) => {
-    // đã bỏ
-    // dispatch(updateComment({ id: commentData.id, isTaskResult }))
+    if (loading === "mark-as-task-result") return
+    if (!taskIsComplete && isTaskResult) {
+      toast.warn("Task isn't complete yet, you can't mark as task result")
+      return
+    }
+    setLoading("mark-as-task-result")
+    commentService
+      .markAsTaskResult(id)
+      .then(() => {
+        dispatch(updateComment({ id, isTaskResult }))
+        toast.success(
+          isTaskResult ? "Comment marked as task result" : "Comment unmarked as task result",
+        )
+      })
+      .catch((error) => {
+        toast.error(axiosErrorHandler.handleHttpError(error).message)
+      })
+      .finally(() => {
+        setLoading("none")
+      })
   }
 
   return (
@@ -217,15 +241,21 @@ const UserComment = ({
                 <span>•</span>
                 <DeleteComment commentId={id} createdAt={createdAt} />
               </div>
-              {/* {!hasCommentAsTaskResult &&
+              {(!commentAsTaskResult || commentAsTaskResult.id === id) &&
                 (isTaskResult ? (
                   <Tooltip title="Unmark as task result" placement="top" arrow>
                     <button
                       onClick={() => handleMarkAsTaskResult(false)}
                       className="flex items-center gap-x-1 text-xs hover:text-delete-btn-bgcl hover:underline"
                     >
-                      <CloseIcon sx={{ height: 16, width: 16 }} />
-                      <span>Unmark as task result</span>
+                      {loading === "mark-as-task-result" ? (
+                        <LogoLoading size="small" />
+                      ) : (
+                        <>
+                          <CloseIcon sx={{ height: 16, width: 16 }} />
+                          <span>Unmark as task result</span>
+                        </>
+                      )}
                     </button>
                   </Tooltip>
                 ) : (
@@ -234,11 +264,17 @@ const UserComment = ({
                       onClick={() => handleMarkAsTaskResult(true)}
                       className="flex items-center gap-x-1 text-xs hover:text-success-text-cl hover:underline"
                     >
-                      <CheckIcon sx={{ height: 16, width: 16 }} />
-                      <span>Mark as task result</span>
+                      {loading === "mark-as-task-result" ? (
+                        <LogoLoading size="small" />
+                      ) : (
+                        <>
+                          <CheckIcon sx={{ height: 16, width: 16 }} />
+                          <span>Mark as task result</span>
+                        </>
+                      )}
                     </button>
                   </Tooltip>
-                ))} */}
+                ))}
             </div>
           )}
         </div>
@@ -346,14 +382,15 @@ const MakeNewComment = ({ onBlurEditor, onFocusEditor, taskId }: TUserEditorProp
 type TCommentsProps = {
   comments: TCommentData[] | null
   taskId: number
+  taskIsComplete: boolean
 }
 
-export const Comments = ({ comments, taskId }: TCommentsProps) => {
+export const Comments = ({ comments, taskId, taskIsComplete }: TCommentsProps) => {
   const editorsContainerRef = useRef<HTMLDivElement>(null)
   const user = useUser()!
 
-  const hasCommentAsTaskResult = useMemo<boolean>(() => {
-    return comments?.some(({ isTaskResult }) => isTaskResult) || false
+  const commentAsTaskResult = useMemo<TCommentData | undefined>(() => {
+    return comments?.find(({ isTaskResult }) => isTaskResult) || undefined
   }, [comments])
 
   const focusBlurEditor = (editorWrapperId: string, type: "focus" | "blur") => {
@@ -388,8 +425,9 @@ export const Comments = ({ comments, taskId }: TCommentsProps) => {
               onBlurEditor={(editorWrapperId) => focusBlurEditor(editorWrapperId, "blur")}
               onFocusEditor={(editorWrapperId) => focusBlurEditor(editorWrapperId, "focus")}
               loginedUser={user}
-              hasCommentAsTaskResult={hasCommentAsTaskResult}
+              commentAsTaskResult={commentAsTaskResult}
               taskId={taskId}
+              taskIsComplete={taskIsComplete}
             />
           ))}
       </div>

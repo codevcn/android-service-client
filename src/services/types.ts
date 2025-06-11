@@ -51,6 +51,8 @@ export type TProjectData = {
   background: string | null
   starred: boolean
   ownerId: number
+  startDate: string | null
+  endDate: string | null
 }
 
 export type TTaskMemberData = TUserData & TUserInProjectData
