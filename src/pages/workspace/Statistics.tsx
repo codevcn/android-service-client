@@ -69,9 +69,9 @@ const StatisticsDashboard = ({ stats, colors }: TStatisticsDashboardProps) => {
   }))
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
+    <div className="flex flex-col gap-6 p-4">
       <div className="bg-[color:var(--ht-modal-popover-bgcl)] rounded-lg shadow p-4">
-        <h2 className="text-regular-text-cl text-lg font-bold mb-4">Project Statistics</h2>
+        <h2 className="text-regular-text-cl text-lg font-bold mb-4">Projects</h2>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
@@ -94,7 +94,7 @@ const StatisticsDashboard = ({ stats, colors }: TStatisticsDashboardProps) => {
       </div>
 
       <div className="bg-[color:var(--ht-modal-popover-bgcl)] rounded-lg shadow p-4">
-        <h2 className="text-regular-text-cl text-lg font-bold mb-4">Task Statistics In Projects</h2>
+        <h2 className="text-regular-text-cl text-lg font-bold mb-4">Tasks</h2>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={taskData}>
             <XAxis dataKey="name" stroke="white" />
@@ -110,9 +110,7 @@ const StatisticsDashboard = ({ stats, colors }: TStatisticsDashboardProps) => {
       </div>
 
       <div className="bg-[color:var(--ht-modal-popover-bgcl)] rounded-lg shadow p-4">
-        <h2 className="text-regular-text-cl text-lg font-bold mb-4">
-          Phase Statistics In Projects
-        </h2>
+        <h2 className="text-regular-text-cl text-lg font-bold mb-4">Phases</h2>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={phaseData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
             <XAxis dataKey="projectName" stroke="white" />
@@ -128,9 +126,7 @@ const StatisticsDashboard = ({ stats, colors }: TStatisticsDashboardProps) => {
       </div>
 
       <div className="bg-[color:var(--ht-modal-popover-bgcl)] rounded-lg shadow p-4">
-        <h2 className="text-regular-text-cl text-lg font-bold mb-4">
-          Member Statistics In Projects (Include User)
-        </h2>
+        <h2 className="text-regular-text-cl text-lg font-bold mb-4">Members</h2>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={memberData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
             <XAxis dataKey="projectName" stroke="white" />
