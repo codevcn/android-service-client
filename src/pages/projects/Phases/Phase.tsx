@@ -1,4 +1,4 @@
-import { FocusEvent, KeyboardEvent, useEffect, useState } from "react"
+import { FocusEvent, KeyboardEvent, useEffect, useRef, useState } from "react"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { useAppDispatch } from "../../../hooks/redux"
@@ -26,14 +26,14 @@ export const Phase = ({ phaseData, className, projectId }: TPhaseProps) => {
   const dispatch = useAppDispatch()
   const [cssClass, setCssClass] = useState<string>("")
   const userInProject = useUserInProject()!
+  const titleRef = useRef<HTMLInputElement>(null)
 
   const quitEditing = (newTitle: string) => {
     if (newTitle && newTitle.length > 0) {
       phaseService
         .updatePhase(
-          projectId,
+          id,
           {
-            id: phaseData.id,
             title: newTitle,
             description: phaseData.description || "",
             position: phaseData.position,
@@ -78,6 +78,12 @@ export const Phase = ({ phaseData, className, projectId }: TPhaseProps) => {
     }
   }, [])
 
+  useEffect(() => {
+    if (titleRef.current) {
+      titleRef.current.value = title
+    }
+  }, [title])
+
   return (
     <div
       style={{
@@ -98,6 +104,7 @@ export const Phase = ({ phaseData, className, projectId }: TPhaseProps) => {
             <EditableTitle
               multiline
               maxRows={5}
+              inputRef={titleRef}
               defaultValue={title}
               onKeyDown={catchEditingEnter}
               variant="outlined"

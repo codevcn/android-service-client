@@ -370,11 +370,13 @@ const NotificationsList = () => {
 
 type TNotificationButtonProps = {
   onOpenNotificationsList: (e?: React.MouseEvent<HTMLButtonElement>) => void
+  eventSource: React.MutableRefObject<EventSource | null>
 }
 
-const NotificationButton = ({ onOpenNotificationsList }: TNotificationButtonProps) => {
+const NotificationButton = ({ onOpenNotificationsList, eventSource }: TNotificationButtonProps) => {
   const { unreadCount } = useAppSelector(({ notification }) => notification)
   const dispatch = useAppDispatch()
+  const [loading, setLoading] = useState<boolean>(true)
 
   const countUnreadNotifications = () => {
     notificationService
@@ -391,9 +393,21 @@ const NotificationButton = ({ onOpenNotificationsList }: TNotificationButtonProp
     if (unreadCount === 0) {
       countUnreadNotifications()
     }
+    const streamEstablishedListener = () => {
+      setLoading(false)
+    }
+    eventSource.current?.addEventListener(ESSEEvents.STREAM_ESTABLISHED, streamEstablishedListener)
+    return () => {
+      eventSource.current?.removeEventListener(
+        ESSEEvents.STREAM_ESTABLISHED,
+        streamEstablishedListener,
+      )
+    }
   }, [])
 
-  return (
+  return loading ? (
+    <LogoLoading size="small" />
+  ) : (
     <StyledBadge color="error" badgeContent={unreadCount} max={9}>
       <StyledIconButton onClick={onOpenNotificationsList}>
         <NotificationsIcon className="text-white" fontSize="small" />
@@ -452,12 +466,16 @@ export const Notification = () => {
       eventSource.current?.removeEventListener(ESSEEvents.GENERAL, notificationListener)
       eventSource.current?.removeEventListener(ESSEEvents.TASK_REMINDER, notificationListener)
       eventSource.current?.removeEventListener(ESSEEvents.PROJECT_REMINDER, notificationListener)
+      eventSource.current?.removeEventListener(ESSEEvents.STREAM_ESTABLISHED, notificationListener)
     }
   }, [])
 
   return (
     <>
-      <NotificationButton onOpenNotificationsList={handleOpenNotification} />
+      <NotificationButton
+        onOpenNotificationsList={handleOpenNotification}
+        eventSource={eventSource}
+      />
 
       <NotificationBoard
         anchorEl={anchorEle}
