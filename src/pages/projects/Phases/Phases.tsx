@@ -321,12 +321,22 @@ export const Phases = ({ userInProject }: TPhasesProps) => {
   const locationState = useLocation().state
   const firstJumpRef = useRef<boolean>(true)
 
-  const getPhases = (projectId: number) => {
+  const recursiveFetchPhases = (projectId: number) => {
+    phaseService.getPhases(projectId).then((res) => {
+      dispatch(setPhases(res))
+      setTimeout(() => {
+        recursiveFetchPhases(projectId)
+      }, 2000)
+    })
+  }
+
+  const fetchPhases = (projectId: number) => {
     openFixedLoadingHandler(true)
     phaseService
       .getPhases(projectId)
       .then((res) => {
         dispatch(setPhases(res))
+        recursiveFetchPhases(projectId)
       })
       .catch((error) => {
         toast.error(axiosErrorHandler.handleHttpError(error).message)
@@ -367,7 +377,7 @@ export const Phases = ({ userInProject }: TPhasesProps) => {
 
   useEffect(() => {
     if (!phases && project?.id) {
-      getPhases(project.id)
+      fetchPhases(project.id)
     }
   }, [])
 

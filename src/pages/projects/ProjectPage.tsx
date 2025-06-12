@@ -19,11 +19,21 @@ const ProjectPage = () => {
   const { projectId } = useParams<TProjectPageParams>()
   const dispatch = useAppDispatch()
 
+  const recursiveFetchProjectData = (projectId: number) => {
+    projectService.getProjectData(projectId).then((res) => {
+      dispatch(setProject(res))
+      setTimeout(() => {
+        recursiveFetchProjectData(projectId)
+      }, 2000)
+    })
+  }
+
   const fetchProjectData = (projectId: number) => {
     projectService
       .getProjectData(projectId)
       .then((res) => {
         dispatch(setProject(res))
+        recursiveFetchProjectData(projectId)
       })
       .catch((error) => {
         toast.error(axiosErrorHandler.handleHttpError(error).message)

@@ -141,11 +141,21 @@ export const TaskDetails = () => {
   const firstJumpRef = useRef<boolean>(true)
   const userInProject = useUserInProject()!
 
-  const getTaskDetailsHandler = (taskId: number, phaseId: number) => {
+  const recursiveFetchTaskDetails = (taskId: number, phaseId: number) => {
+    taskService.getTaskDetails(taskId).then((res) => {
+      dispatch(setTaskData({ ...res, phaseId }))
+      setTimeout(() => {
+        recursiveFetchTaskDetails(taskId, phaseId)
+      }, 2000)
+    })
+  }
+
+  const fetchTaskDetailsHandler = (taskId: number, phaseId: number) => {
     taskService
       .getTaskDetails(taskId)
       .then((res) => {
         dispatch(setTaskData({ ...res, phaseId }))
+        recursiveFetchTaskDetails(taskId, phaseId)
       })
       .catch((error) => {
         toast.error(axiosErrorHandler.handleHttpError(error).message)
@@ -165,10 +175,10 @@ export const TaskDetails = () => {
           if (taskData) {
             if (taskId !== taskData.id) {
               dispatch(setTaskData(null))
-              getTaskDetailsHandler(taskId, phaseData.id)
+              fetchTaskDetailsHandler(taskId, phaseData.id)
             }
           } else {
-            getTaskDetailsHandler(taskId, phaseData.id)
+            fetchTaskDetailsHandler(taskId, phaseData.id)
           }
         }
       }
